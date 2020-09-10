@@ -1,0 +1,48 @@
+//save the user stack pointer
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 + 13] = SP;
+//switch to user area(kernel stack)
+SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11] * 512 - 1;
+//push user registers
+backup;
+
+alias PID R0;
+alias process_table R1;
+PID = [SYSTEM_STATUS_TABLE + 1];
+process_table = PROCESS_TABLE + PID*16;
+//update process_table
+[process_table + 12] = SP%512;
+[process_table + 14] = PTBR;
+[process_table + 15] = PTLR;
+[process_table + 4] = READY;
+
+//scheduling
+alias newPID R2;
+if(PID == 0) then
+    newPID = 1;
+else
+    newPID = 0;
+endif;
+
+//switch to newly scheduled process
+alias new_process_table R3;
+new_process_table = PROCESS_TABLE + newPID*16;
+
+//restore registers from process table
+SP = [new_process_table + 11]*512 + [new_process_table + 12] ;
+PTBR = [new_process_table + 14];
+PTLR = [new_process_table + 15];
+
+//change the new process status to be running
+[SYSTEM_STATUS_TABLE + 1] = newPID;
+[new_process_table + 4] = RUNNING;
+
+//If process is never scheduled before swith directly to the user stack
+if([new_process_table + 4] == CREATED) then
+    SP = [new_process_table + 13];
+    ireturn;
+endif;
+
+//restore the user registers and user SP
+restore;
+SP = [PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13];
+ireturn;

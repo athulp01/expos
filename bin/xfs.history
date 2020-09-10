@@ -1,0 +1,68 @@
+help
+ls
+help
+exit
+exit
+df
+exit
+load --os xsm-progs/os-startup.xsm
+load --int=timer xsm-progs/timer.xsm
+exit
+load --int=timer xsm-progs/timer.xsm
+exit
+load --os xsm-progs/os-startup.xsm
+load --int=7 xsm-progs/int7.xsm
+exit
+load --init xsm-progs/squares.xsm
+exit
+load --init xsm-progs/squares.xsm
+load --int=7 xsm-progs/int7.xsm
+load --os xsm-progs/os-startup.xsm
+exit
+load --int=7 xsm-progs/int7.xsm
+exit
+load --init xsm-progs/squares.xsm
+exit
+load --init xsm-progs/squares.xsm
+exit
+load --init xsm-progs/squares.xsm
+exit
+load --init xsm-progs/squares.xsm
+load --init xsm-progs/init.xsm
+load --idle xsm-progs/idle.xsm
+load --os xsm-progs/os.xsm
+load --int=7 xsm-progs/int7.xsm
+exit
+load --init xsm-progs/init.xsm
+exit
+load --int=timer xsm-progs/timer.xsm
+load --int=timer timer.xsm
+exit
+load --int=timer xsm-progs/timer.xsm
+load --int=timer timer.xsm
+exit
+load --os xsm-progs/os.xsm
+exit
+load --os xsm-progs/os.xsm
+load --init xsm-progs/init.xsm
+eixt
+exit
+load --init init.xsm
+exit
+load --int=7 xsm-progs/int7.xsm
+exit
+load --init init.xsm
+exit
+load -int=timer xsm-progs/timer.xsm
+load --int=timer xsm-progs/timer.xsm
+exit
+load --int=timer xsm-progs/timer.xsm
+exit
+load --int=timer xsm-progs/timer.xsm
+load --int=timer ../xsm-progs/timer.xsm
+exit
+load --int=timer ../xsm-progs/timer.xsm
+load --int=timer ./xsm-progs/timer.xsm
+exit
+load --int=timer ./xsm-progs/timer.xsm
+exit

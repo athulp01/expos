@@ -1,0 +1,13 @@
+#Compiling
+/home/athul/Workspace/expos/myexpos/bin/expl-bin $1
+if [ $? -eq 1 ]
+then
+echo "compilation failed"
+exit 1
+fi
+
+#Label Translation
+/home/athul/Workspace/expos/myexpos/bin/ltranslate
+
+filename=$(basename -- "$1")
+mv "/home/athul/Workspace/expos/myexpos/xsm-progs/assemblycode.xsm" "/home/athul/Workspace/expos/myexpos/xsm-progs/${filename%.*}.xsm"
