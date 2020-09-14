@@ -1,0 +1,17 @@
+alias func R1;
+alias pid R2;
+
+if func == 3 then
+    multipush(R1, R2, R3);
+    R1 = 8;
+    R2 = pid;
+    call MOD_0;
+    multipop(R1, R2, R3);
+    print R3;
+    R1 = 9;
+    R2 = pid;
+    call MOD_0;
+    return;
+else
+    return;
+endif;

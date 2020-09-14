@@ -66,3 +66,37 @@ load --int=timer ./xsm-progs/timer.xsm
 exit
 load --int=timer ./xsm-progs/timer.xsm
 exit
+load --module 7 xsm-progs/boot.xsm
+load --os xsm-progs/os.xsm
+load --int=timer xsm-progs/timer.xsm
+exit
+load --os xsm-progs/os.xsm
+exit
+load --exec xsm-progs/init.xsm
+help
+dump --inodeusertable
+exit
+load --exec ../xsm-progs/even.xsm
+load --init ../xsm-progs/init.xsm
+help
+df
+help
+ls
+rm init.xsm
+dump --inodeusertable
+exit
+load --init xsm-progs/init.xsm
+load --os xsm-progs/os.xsm
+exit
+load --init xsm-progs/count.xsm
+exit
+load --init xsm-progs/count.xsm
+exit
+load --init xsm-progs/count.xsm
+exit
+load --int=timer xsm-progs/timer.xsm
+exit
+load --library library.lib
+exit
+load --init xsm-progs/init.xsm
+exit

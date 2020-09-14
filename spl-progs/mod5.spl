@@ -1,0 +1,51 @@
+alias curPID R0;
+curPID = [SYSTEM_STATUS_TABLE + 1];
+//backup BP(BP is not backed up during a syscall)
+SP = SP + 1;
+[SP] = BP;
+
+//backup other registers to process_table
+alias process_table R1;
+process_table = PROCESS_TABLE + 16*curPID;
+
+[process_table + 12] = SP%512;
+[process_table + 14] = PTBR;
+[process_table + 15] = PTLR;
+
+alias newPID R2;
+alias next_process_table R3;
+next_process_table = process_table + 16;
+
+//get next process to schedule , 28927 is the end of process_table memory location
+while(next_process_table < 28927 && [next_process_table + 4] == TERMINATED) do
+    next_process_table = next_process_table + 16;
+endwhile;
+
+//if there is no process to schedule, then schedule idle process
+newPID = [next_process_table + 1];
+if(next_process_table == 28928) then
+    newPID = 0;
+    next_process_table = PROCESS_TABLE;
+endif;
+
+//restore the registers from new process
+SP = [next_process_table + 11]*512 + [next_process_table + 12];
+PTBR = [next_process_table + 14];
+PTLR = [next_process_table + 15];
+
+[SYSTEM_STATUS_TABLE + 1] = newPID;
+
+//if the new process is not schedule before, then switch to userstack
+if([next_process_table + 4] == CREATED) then
+    SP = [next_process_table + 13];
+    [next_process_table + 4] = RUNNING;
+    [next_process_table + 9] = 0;
+    ireturn;
+endif;
+
+breakpoint;
+//transfer control to instruction after CALL MODULE_5
+[next_process_table + 4] = RUNNING;
+BP = [SP];
+SP = SP - 1;
+return;

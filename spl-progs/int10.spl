@@ -1,0 +1,16 @@
+//change state of cur process to terminated
+[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1] + 4] = TERMINATED;
+
+//check if all process are terminated
+alias ptable R0;
+ptable = PROCESS_TABLE + 16;
+
+while(ptable < 28927 && [ptable + 4] == TERMINATED) do
+    ptable = ptable + 16;
+endwhile;
+
+if(ptable >= 28927) then
+    halt;
+else
+    call SCHEDULER;
+endif;

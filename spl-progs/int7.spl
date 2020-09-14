@@ -1,13 +1,18 @@
+//set the mode flag ot syscall number
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 5;
+//save the usersp to process table entry
 alias userSp R0;
 userSp = SP;
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 13] = SP;
+
+//switch to kernel stack
 SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 + 11]*512 - 1;
 
 alias phyPage R1;
 alias offset R2;
 alias fileDescPhyAddr R3;
 
+//get the write file descriptor from the user stack
 phyPage = [PTBR + 2 * ((userSp - 4)/512)];
 offset = (userSp - 4)%512;
 fileDescPhyAddr = (phyPage * 512) + offset;
@@ -16,16 +21,28 @@ fd = [fileDescPhyAddr];
 
 if(fd != -2)
 then
+    // if file descriptor is not -2(not stdout) then set -1 to the return address
     alias phyAddrRetVal R5;
     phyAddrRetVal = ([PTBR + 2 * ((userSp - 1) / 512)] * 512) + ((userSp - 1) % 512);
     [phyAddrRetVal] = -1;
 else
+    // get the output word
     alias word R5;
     word = [[PTBR + 2 * ((userSp - 3) / 512)] * 512 + ((userSp - 3) % 512)];
-    print word;
+    //print it to stdout
+    multipush(R0, R1, R2, R3, R4, R5);
+    //function number of terminalwrite
+    R1 = 3;
+    //pid
+    R2 = [SYSTEM_STATUS_TABLE + 1];
+    R3 = word;
+    call MOD_4;
+    multipop(R0, R1, R2, R3, R4, R5);
+    //set return value to 0
     alias physicalAddrRetVal R6;
     physicalAddrRetVal = ([PTBR + 2 * (userSp - 1)/ 512] * 512) + ((userSp - 1) % 512);
     [physicalAddrRetVal] = 0;
+    //switch to user stack and reset the mode flag
     SP = userSp;
     [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
 endif;
