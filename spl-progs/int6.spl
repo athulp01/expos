@@ -1,0 +1,35 @@
+//read syscall
+//call device manager->acquire terminal->read->context switch->wait for console interupt->store the result from pte->return
+//change mod to read(7)
+[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 7;
+
+alias userSP R0;
+alias process_table R1;
+userSP = SP;
+process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
+
+//switch to kernel stack
+[process_table + 13] = userSP;
+SP = [process_table + 11]*512 - 1;
+//get fd from stack by doing addr translation manually
+alias fd R2;
+fd = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+
+if fd != -1 then
+    [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
+else 
+    alias word_addr R3;
+    word_addr = [[PTBR + 2*(userSP - 3)/512]*512 + ((userSP-3)%512)];
+    multipush(R0, R1, R2, R3);
+    //terminal read
+    R1 = 4;
+    R2 = [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1]+ 1];
+    R3 = word;
+    call DEVICE_MANAGER;
+    multipop(R0, R1, R2, R3);
+    [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = 0;
+endif;
+
+[process_table +9] = 0;
+SP = [process_table + 13];
+ireturn;

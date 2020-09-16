@@ -17,10 +17,13 @@ alias next_process_table R3;
 next_process_table = process_table + 16;
 
 //get next process to schedule , 28927 is the end of process_table memory location
-while(next_process_table < 28927 && [next_process_table + 4] == TERMINATED) do
+//TODO: make it circular
+while([next_process_table + 4] != READY && [next_process_table + 4] != CREATED) do
     next_process_table = next_process_table + 16;
+    if(next_process_table >= 28927) then
+        break;
+    endif;
 endwhile;
-
 //if there is no process to schedule, then schedule idle process
 newPID = [next_process_table + 1];
 if(next_process_table == 28928) then
@@ -43,7 +46,6 @@ if([next_process_table + 4] == CREATED) then
     ireturn;
 endif;
 
-breakpoint;
 //transfer control to instruction after CALL MODULE_5
 [next_process_table + 4] = RUNNING;
 BP = [SP];

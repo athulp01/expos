@@ -17,9 +17,7 @@ while(current_ptable < 28927) do
     current_ptable = current_ptable + 16;
 endwhile;
 
-breakpoint;
 call SCHEDULER;
-breakpoint;
 
 //restore the user registers and user SP
 restore;

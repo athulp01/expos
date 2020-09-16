@@ -100,3 +100,6 @@ load --library library.lib
 exit
 load --init xsm-progs/init.xsm
 exit
+ls
+rm even.xsm
+exit

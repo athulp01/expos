@@ -3,7 +3,7 @@ int main() {
         int cur, temp;
     enddecl
     begin
-    cur = 1;
+    temp = exposcall("Read", -1, cur);
     while(cur <= 100) do
         temp = exposcall("Write", -2, cur);
         cur = cur + 2;

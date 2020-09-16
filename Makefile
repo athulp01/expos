@@ -12,7 +12,7 @@ xfs: xsm
 
 xsm: interrupt modules user os 
 
-interrupt: $(X_DIR)/int7.xsm $(X_DIR)/int10.xsm $(X_DIR)/timer.xsm
+interrupt: $(X_DIR)/int6.xsm $(X_DIR)/int7.xsm $(X_DIR)/int10.xsm $(X_DIR)/timer.xsm $(X_DIR)/console.xsm
 
 modules: $(X_DIR)/mod0.xsm $(X_DIR)/mod4.xsm $(X_DIR)/mod7.xsm $(X_DIR)/mod5.xsm
 
@@ -33,6 +33,14 @@ $(X_DIR)/timer.xsm: $(S_DIR)/timer.spl
 	spl $<
 	echo "load --int=timer $@" >> commands_xfs
 
+$(X_DIR)/console.xsm: $(S_DIR)/console.spl
+	spl $<
+	echo "load --int=console $@" >> commands_xfs
+
+$(X_DIR)/int6.xsm: $(S_DIR)/int6.spl
+	spl $<
+	echo "load --int=6 $@" >> commands_xfs
+	
 $(X_DIR)/int7.xsm: $(S_DIR)/int7.spl
 	spl $<
 	echo "load --int=7 $@" >> commands_xfs

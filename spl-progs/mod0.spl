@@ -1,25 +1,35 @@
 alias func R1;
 alias pid R2;
 
+//Acquire termnial
 if func == 8 then
+    //busy wait
     while([TERMINAL_STATUS_TABLE] == 1) do
         [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1] + 4] = WAIT_TERMINAL;
         multipush(R1, R2);
         call MOD_5;
+        //only return when termial is released by some process
+        //Check if any process acquired terminal in the mean time
         multipop(R1, R2);
     endwhile;
+    //Terminal acquired
     [TERMINAL_STATUS_TABLE] = 1;
     [TERMINAL_STATUS_TABLE + 1] = pid;
     return;
 endif;
+
+//Release terminal
 if func == 9 then
+    //Current pid hsould match the pid which hold the terminal before
     if pid != [TERMINAL_STATUS_TABLE + 1] then
         R0 = -1;
         return;
     endif;
+    //Release terminal
     [TERMINAL_STATUS_TABLE] = 0;
     alias cur_table R3;
     cur_table = PROCESS_TABLE;
+    //Tell all other process that terminal is free now, scheduler will do the rest
     while(cur_table < 28927) do 
         if([cur_table + 1] != -1 && [cur_table + 4] == WAIT_TERMINAL) then
             [cur_table + 4] = READY;

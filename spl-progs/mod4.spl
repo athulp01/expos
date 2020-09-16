@@ -1,17 +1,41 @@
 alias func R1;
 alias pid R2;
 
+//Terminal Write
 if func == 3 then
     multipush(R1, R2, R3);
+    //Acquire terminal
     R1 = 8;
     R2 = pid;
     call MOD_0;
     multipop(R1, R2, R3);
     print R3;
+    //Release terminal
     R1 = 9;
     R2 = pid;
     call MOD_0;
     return;
-else
+endif;
+
+//Terminal Read
+if func == 4 then
+    //Acquire terminal
+    multipush(R1, R2, R3);
+    R1 = 8;
+    R2 = pid;
+    call RESOURCE_MANAGER;
+    multipop(R1, R2, R3);
+    //call read and give control to scheduler(Need to wait till user enter input)
+    read;
+    [PROCESS_TABLE + 16*pid + 4] = WAIT_TERMINAL;
+
+    multipush(R1, R2, R3);
+    call SCHEDULER;
+    multipop(R1, R2, R3);
+
+    //manually do addr translation and store the result from ptable
+    R5 = [PTBR +2*(R3/512)]*512 + R3%512;
+    [R5] = [PROCESS_TABLE + 16*pid + 8];
     return;
 endif;
+
