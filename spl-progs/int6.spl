@@ -24,7 +24,7 @@ else
     //terminal read
     R1 = 4;
     R2 = [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1]+ 1];
-    R3 = word;
+    R3 = word_addr;
     call DEVICE_MANAGER;
     multipop(R0, R1, R2, R3);
     [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = 0;
