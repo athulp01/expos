@@ -1,0 +1,12 @@
+int main() {
+    decl
+        str execname;
+        int temp;
+    enddecl
+    begin
+    temp = exposcall("Write", -2, "enter name", 0);
+    temp = exposcall("Exec", "even.xsm", 0, 0);
+    temp = exposcall("Write", -2, "enter name", 0);
+    return 0;
+    end
+}

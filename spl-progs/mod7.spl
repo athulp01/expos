@@ -31,7 +31,42 @@ loadi(9, 22);
 //read interrupt
 loadi(14, 27);
 loadi(15, 28);
+//exec interrupt
+loadi(20, 33);
+loadi(21, 34);
+//process manager
+loadi(42, 55);
+loadi(43, 56);
+//memory manager
+loadi(44, 57);
+loadi(45, 58);
+//inode
+loadi(59 ,3);
+loadi(60 ,4);
+//disk interrupt
+loadi(6, 19);
+loadi(7, 20);
 
+
+//set disk as free
+[DISK_STATUS_TABLE] = 0;
+
+//initalize memory free list, set all user available page to 0
+alias page R1;
+page = 0;
+while page <= 127 do
+    if page >= 80 then
+        [MEMORY_FREE_LIST + page] = 0;
+    else 
+        [MEMORY_FREE_LIST + page] = 1;
+    endif;
+    page = page + 1;
+endwhile;
+
+//mem_free_count
+[SYSTEM_STATUS_TABLE + 2] = 47;
+//wait_mem_count
+[SYSTEM_STATUS_TABLE + 3] = 0;
 // Page table for init
 PTBR = PAGE_TABLE_BASE+20;
 PTLR = 10;
@@ -72,6 +107,17 @@ PTLR = 10;
 [PROCESS_TABLE + 16 + 12] = 0;
 [PROCESS_TABLE + 16 + 14] = PAGE_TABLE_BASE + 20;
 [PROCESS_TABLE + 16 + 15] = 10;
+
+
+//initalize resource table of init process
+alias rc_table_entry R5;
+rc_table_entry = 0;
+
+while(rc_table_entry < 16) do
+    [[PROCESS_TABLE + 16 + 11]*512 + RESOURCE_TABLE_OFFSET + rc_table_entry] = -1;
+    rc_table_entry = rc_table_entry + 1;
+endwhile;
+
 
 //entry point for init
 [76*512] = [65 * 512 + 1];
