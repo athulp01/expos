@@ -1,8 +1,9 @@
+//MEMORY_MANAGER
 alias func R1;
-alias page R2;
 
 //get free page
 if func == 1 then
+    alias page R2;
     //increment the wait_mem_count and go to busy loop
     [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1;
     while [SYSTEM_STATUS_TABLE + 2] == 0 do
@@ -28,6 +29,7 @@ endif;
 
 //Release page
 if func == 2 then
+    alias page R2;
     //decrement corresponding free list
     [MEMORY_FREE_LIST + R2] = [MEMORY_FREE_LIST + R2] - 1;
     //if the last proces whihc uses this page
@@ -43,5 +45,61 @@ if func == 2 then
             page = page + 1;
         endwhile;
     endif;
+    return;
+endif;
+
+//release block
+if func == 4 then
+    alias block_num R2;
+    alias pid R3;
+    [DISK_FREE_LIST + block_num] = [DISK_FREE_LIST + block_num] - 1;
+    return;
+endif;
+    
+//get code page
+if func == 5 then
+    alias block_num R2;
+    alias pid R3;
+    alias code_page R4;
+    pid = 1;
+    //Search disk map table of all proces
+    while pid < MAX_PROC_NUM do
+        code_page = 1;
+        //search all code pages of that process
+        while code_page <= 4 do
+            //if the same block is loaded by another process
+            if [DISK_MAP_TABLE + 10*pid + 3 + code_page] == block_num then
+                //if code block found, check if in memory
+                if [PAGE_TABLE_BASE + 20*pid + 7 + code_page] != -1 then
+                    //if so return and increment memory free list
+                    R0 = [PAGE_TABLE_BASE + 20*pid + 7 + code_page];
+                    [MEMORY_FREE_LIST + R0] = [MEMORY_FREE_LIST + R0] + 1;
+                    return;
+                endif;
+            endif;
+            code_page = code_page + 1;
+        endwhile;
+        pid = pid + 1;
+    endwhile;
+    // allocate a new page and load the block 
+    alias page_num R5;
+    multipush(R1, R2, R3, R4);
+    //get_free_page
+    R1 = 1;
+    R2 = block_num;
+    call MEMORY_MANAGER;
+    multipop(R1, R2, R3, R4);
+    page_num = R0;
+
+    multipush(R1, R2, R3, R4, R5);
+    //disk load
+    R1 = 2;
+    R4 = block_num;
+    R2 = [SYSTEM_STATUS_TABLE + 1];
+    R3 = page_num;
+    call DEVICE_MANAGER;
+    multipop(R1, R2, R3, R4, R5);
+    //return loaded page number
+    R0 = page_num;
     return;
 endif;

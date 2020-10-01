@@ -46,6 +46,8 @@ loadi(60 ,4);
 //disk interrupt
 loadi(6, 19);
 loadi(7, 20);
+//disk free list
+loadi(61, 2);
 
 
 //set disk as free
@@ -109,6 +111,15 @@ PTLR = 10;
 [PROCESS_TABLE + 16 + 15] = 10;
 
 
+//initalize disk map table
+[DISK_MAP_TABLE + 10 + 2] = -1;
+[DISK_MAP_TABLE + 10 + 3] = -1;
+[DISK_MAP_TABLE + 10 + 4] = 7;
+[DISK_MAP_TABLE + 10 + 2] = 8;
+[DISK_MAP_TABLE + 10 + 2] = -1;
+[DISK_MAP_TABLE + 10 + 2] = -1;
+[DISK_MAP_TABLE + 10 + 2] = -1;
+[DISK_MAP_TABLE + 10 + 2] = -1;
 //initalize resource table of init process
 alias rc_table_entry R5;
 rc_table_entry = 0;

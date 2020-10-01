@@ -6,7 +6,6 @@ alias userSP R0;
 alias process_table R1;
 userSP = SP;
 process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
-breakpoint;
 
 //switch to kernel stack
 [process_table + 13] = userSP;
@@ -20,10 +19,12 @@ inode = INODE_TABLE;
 //search the inode table entry for exec file
 while (inode < INODE_TABLE + 16*(MAX_FILE_NUM)) do
    if file == [inode + 1] then
+        //should be exec file and code page should not be zero
         if [inode] != EXEC || [inode+6] == 0 then
             [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
             [process_table +9] = 0;
             SP = [process_table + 13];
+            //exit if exec file is not valid
             ireturn;
         endif;
         break;
@@ -53,47 +54,33 @@ SP = [process_table + 11]*512 - 1;
 [PTBR+3] = "0100";
 
 alias new_page R4;
-alias block_num R6;
 
-//Heap
-call get_new_page;
-[PTBR+4] = new_page;
-[PTBR+5] = "0110";
+//Invalidate Heap(demand paging)
+[PTBR+4] = -1;
+[PTBR+5] = "0000";
 
-call get_new_page;
-[PTBR+6] = new_page;
-[PTBR+7] = "0110";
+[PTBR+6] = -1;
+[PTBR+7] = "0000";
 
-//Code
-call get_new_page;
-[PTBR+8] = new_page;
+//Load only the first code page
+multipush(R0,R1, R2, R3);
+//get_code_page
+R1 = 5;
+R2 = [inode + 8];
+call MEMORY_MANAGER;
+[PTBR+8] = R0;
 [PTBR+9] = "0100";
-block_num = [inode + 8];
-call device_mgr;
+multipop(R0,R1, R2, R3);
 
-if [inode+9] != -1 then
-    call get_new_page;
-    [PTBR+10] = new_page;
-    [PTBR+11] = "0100";
-    block_num = [inode + 9];
-    call device_mgr;
-endif;
+//Invalidate other code pages
+[PTBR+10] = -1;
+[PTBR+11] = "0000";
 
-if [inode + 10] != -1 then
-    call get_new_page;
-    [PTBR+12] = new_page;
-    [PTBR+13] = "0100";
-    block_num = [inode + 10];
-    call device_mgr;
-endif;
+[PTBR+12] = -1;
+[PTBR+13] = "0000";
 
-if [inode + 11] != -1 then
-    call get_new_page;
-    [PTBR+14] = new_page;
-    [PTBR+15] = "0100";
-    block_num = [inode + 11];
-    call device_mgr;
-endif;
+[PTBR+14] = -1;
+[PTBR+15] = "0000";
 
 //Stack
 call get_new_page;
@@ -103,6 +90,17 @@ call get_new_page;
 call get_new_page;
 [PTBR+18] = new_page;
 [PTBR+19] = "0110";
+
+//initalize disk map table
+[DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 2] = -1;
+[DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 3] = -1;
+[DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 4] = [inode+8];
+[DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 5] = [inode+9];
+[DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 6] = [inode+10];
+[DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 7] = [inode+11];
+[DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 8] = -1;
+[DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 9] = -1;
+
 
 //set entry point
 [process_table + 13] = 8*512;
@@ -121,6 +119,7 @@ endwhile;
 
 //return value
 [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = 0;
+print "break";
 breakpoint;
 ireturn;
 
@@ -129,14 +128,5 @@ get_new_page:
     R1 = 1;
     call MEMORY_MANAGER;
     new_page = R0;
-    multipop(R0, R1, R2, R3);
-    return;
-device_mgr:
-    multipush(R0, R1, R2, R3);
-    R1 = 2;
-    R2 = [SYSTEM_STATUS_TABLE + 1];
-    R3 = new_page;
-    R4 = block_num;
-    call DEVICE_MANAGER;
     multipop(R0, R1, R2, R3);
     return;

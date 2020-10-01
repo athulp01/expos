@@ -12,7 +12,7 @@ xfs: xsm
 
 xsm: interrupt modules user os 
 
-interrupt: $(X_DIR)/int9.xsm $(X_DIR)/int6.xsm $(X_DIR)/int7.xsm $(X_DIR)/int10.xsm $(X_DIR)/timer.xsm $(X_DIR)/console.xsm $(X_DIR)/disk.xsm
+interrupt: $(X_DIR)/int9.xsm $(X_DIR)/int6.xsm $(X_DIR)/int7.xsm $(X_DIR)/int10.xsm $(X_DIR)/timer.xsm $(X_DIR)/console.xsm $(X_DIR)/disk.xsm $(X_DIR)/exception.xsm
 
 modules: $(X_DIR)/mod0.xsm $(X_DIR)/mod5.xsm $(X_DIR)/mod7.xsm $(X_DIR)/mod1.xsm $(X_DIR)/mod2.xsm $(X_DIR)/mod4.xsm
 
@@ -36,6 +36,10 @@ $(X_DIR)/timer.xsm: $(S_DIR)/timer.spl
 $(X_DIR)/disk.xsm: $(S_DIR)/disk.spl
 	spl $<
 	echo "load --int=disk $@" >> commands_xfs
+
+$(X_DIR)/exception.xsm: $(S_DIR)/exception.spl
+	spl $<
+	echo "load --exhandler $@" >> commands_xfs
 
 $(X_DIR)/console.xsm: $(S_DIR)/console.spl
 	spl $<

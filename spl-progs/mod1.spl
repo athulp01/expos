@@ -1,3 +1,4 @@
+//process manager
 alias func R1;
 alias pid R2;
 
@@ -53,5 +54,32 @@ if func == 4 then
         endif;
         page = page + 1;
     endwhile;
+    
+    //Invalidate disk map table
+    alias block_num R4;
+    alias disk_entry R5;
+    disk_entry = 2;
+    while disk_entry < 10 do
+        // if heap of stack release the block
+        if disk_entry < 4 && disk_entry > 7 then
+            block_num = [DISK_MAP_TABLE + 10*pid + disk_entry];
+            call release_block;
+        endif;
+        [DISK_MAP_TABLE + 10*pid + disk_entry] = -1;
+        disk_entry = disk_entry + 1;
+    endwhile;
+    return;
+
+release_block:
+    if block_num == -1 then
+        return;
+    endif;
+    multipush(R1, R2, R3);
+    R1 = 4;
+    R2 = block_num;
+    R3 = pid;
+    call MEMORY_MANAGER;
+    multipop(R1, R2, R3);
     return;
 endif;
+
