@@ -1,0 +1,136 @@
+//fork syscall
+[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 8;
+
+alias userSP R0;
+alias process_table R1;
+userSP = SP;
+process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
+
+//switch to kernel stack
+[process_table + 13] = userSP;
+SP = [process_table + 11]*512 - 1;
+
+//Allocate a pcb table entry
+alias new_pid R2;
+multipush(R0, R1);
+R1 = 1;
+call PROCESS_MANAGER;
+new_pid = R0;
+multipop(R0, R1);
+
+// if no pid is available retunr -1
+if new_pid == -1 then
+    [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
+    return;
+endif;
+
+alias new_page_num R3;
+alias new_ptbr R4;
+new_ptbr = PAGE_TABLE_BASE + new_pid*20;
+
+//if heap is not alloted for parent process then do  it now
+if [PTBR + 4] == -1 then
+    call get_new_page;
+    [PTBR + 4] = new_page_num;
+    [PTBR + 5] = "0110";
+    call get_new_page;
+    [PTBR + 6] = new_page_num;
+    [PTBR + 7] = "0110";
+endif;
+
+//allocate new stack for child
+call get_new_page;
+[new_ptbr + 16] = new_page_num;
+[new_ptbr + 17] = "0110";
+call get_new_page;
+[new_ptbr + 18] = new_page_num; 
+[new_ptbr + 19] = "0110";
+
+//Set process_table entrues
+[PROCESS_TABLE + new_pid*16 + 0] = 0;
+//pid is set by PROCESS_MANAGER
+[PROCESS_TABLE + new_pid*16 + 2] = [SYSTEM_STATUS_TABLE + 1];
+[PROCESS_TABLE + new_pid*16 + 3] = [process_table + 3];
+[PROCESS_TABLE + new_pid*16 + 4] = CREATED;
+[PROCESS_TABLE + new_pid*16 + 6] = [process_table + 6];
+[PROCESS_TABLE + new_pid*16 + 7] = [process_table + 7];
+//no need to intialize input buffer
+[PROCESS_TABLE + new_pid*16 + 9] = 0;
+[PROCESS_TABLE + new_pid*16 + 10] = [process_table + 10];
+call get_new_page;
+[PROCESS_TABLE + new_pid*16 + 11] = new_page_num; 
+[PROCESS_TABLE + new_pid*16 + 12] = 0;
+[PROCESS_TABLE + new_pid*16 + 13] = [process_table + 13];
+//page table set by PROCESS_MANAGER
+
+    
+//initalize resource table entry
+alias rc_ent R5;
+alias rc_parent R7;
+rc_parent = [process_table+11]*512 + RESOURCE_TABLE_OFFSET;
+alias rc_child R8;
+rc_child = [PROCESS_TABLE + 16*new_pid+11]*512 + RESOURCE_TABLE_OFFSET;
+
+rc_ent = 0;
+while(rc_ent < 16) do
+    [rc_child + rc_ent] = [rc_parent + rc_ent];
+    //Increment corresponding file or semaphore table entries
+    if [rc_parent + rc_ent] == FILE then
+        [OPEN_FILE_TABLE + [rc_parent + rc_ent + 1]] = [OPEN_FILE_TABLE + [rc_parent+ rc_ent +1]] + 1;
+    endif;
+    if [rc_parent + rc_ent] == SEMAPHORE then
+        [SEMAPHORE_TABLE + [rc_parent + rc_ent + 1]] = [SEMAPHORE_TABLE + [rc_parent + rc_ent + 1]] + 1;
+    endif;
+    rc_ent = rc_ent + 2;
+endwhile;
+
+//initialze disk table entries
+alias disk_entry R5;
+disk_entry = 0;
+while disk_entry < 10 do
+    [DISK_MAP_TABLE + 10*new_pid + disk_entry] = [DISK_MAP_TABLE + 10*[SYSTEM_STATUS_TABLE+1] + disk_entry];
+    disk_entry = disk_entry + 1;
+endwhile;
+
+//set page table for child
+alias page_table_entry R5;
+page_table_entry = 0;
+while page_table_entry < 16 do
+    //share all pages except stack
+    [new_ptbr + page_table_entry] = [PTBR + page_table_entry];
+    if page_table_entry%2 == 0 then
+        [MEMORY_FREE_LIST + [PTBR + page_table_entry]] = [MEMORY_FREE_LIST + [PTBR + page_table_entry]] + 1;
+    endif;
+    page_table_entry = page_table_entry + 1;
+endwhile;
+
+//copy stack from paretn to child word by word
+alias usersp_idx R5;
+usersp_idx = 0;
+while usersp_idx < 1024 do
+    if usersp_idx < 512 then
+        [[new_ptbr + 16]*512 + usersp_idx] = [[PTBR + 16]*512 + usersp_idx];
+    else
+        [[new_ptbr + 18]*512 + usersp_idx] = [[PTBR + 18]*512 + usersp_idx];
+    endif;
+    usersp_idx = usersp_idx + 1;
+endwhile;
+
+//store bp at top of kernel stack, so that scheduler can restore it 
+[[PROCESS_TABLE + 16*new_pid + 11]*512] = BP;
+
+//set return value for both parent and child
+[[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = new_pid;
+[[new_ptbr + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = 0;
+
+[process_table +9] = 0;
+SP = [process_table + 13];
+ireturn;
+
+get_new_page:
+    multipush(R0, R1, R2, R4);
+    R1 = 1;
+    call MEMORY_MANAGER;
+    new_page_num = R0;
+    multipop(R0,R1, R2, R4);
+    return;
