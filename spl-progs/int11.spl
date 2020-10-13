@@ -1,0 +1,60 @@
+alias userSP R0;
+alias process_table R1;
+alias syscall R2;
+userSP = SP;
+process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
+syscall = [[PTBR + 2*(userSP - 5)/512]*512 + (userSP-5)%512];
+
+[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = syscall;
+
+//switch to kernel stack
+[process_table + 13] = userSP;
+SP = [process_table + 11]*512 - 1;
+
+if syscall == 11 then
+    [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = [process_table+1];
+    [process_table +9] = 0;
+    SP = [process_table + 13];
+    ireturn;
+endif;
+
+if syscall == 12 then
+    [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = [process_table+2];
+    [process_table +9] = 0;
+    SP = [process_table + 13];
+    ireturn;
+endif;
+
+if syscall == 13 then
+    alias pid R3;
+    pid = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+    if pid < 1 || pid > MAX_PROC_NUM || [PROCESS_TABLE + 16*pid + 4] == TERMINATED then
+        [[PTBR + 2*(userSP - 5)/512]*512 + (userSP-5)%512] = -1;
+        [process_table +9] = 0;
+        SP = [process_table + 13];
+        ireturn;
+    endif;
+    [process_table + 4] = WAIT_PROCESS;
+    [process_table + 5] = pid;
+    print "waiting";
+    multipush(R0, R1, R2, R3);
+    call SCHEDULER;
+    multipop(R0, R1, R2, R3);
+    breakpoint;
+endif;
+
+if syscall == 14 then
+    alias ptable R3;
+    ptable = PROCESS_TABLE + 32;
+    while ptable < PROCESS_TABLE + 16*MAX_PROC_NUM do
+        if [ptable + 4] == WAIT_PROCESS then
+            [ptable + 4] = READY;
+        endif;
+        ptable = ptable + 16;
+    endwhile;
+endif;
+
+[[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = 0;
+[process_table +9] = 0;
+SP = [process_table + 13];
+ireturn;
