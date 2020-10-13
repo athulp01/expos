@@ -21,7 +21,7 @@ if func == 8 then
     while([TERMINAL_STATUS_TABLE] == 1) do
         [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1] + 4] = WAIT_TERMINAL;
         multipush(R1, R2);
-        call MOD_5;
+        call SCHEDULER;
         //only return when termial is released by some process
         //Check if any process acquired terminal in the mean time
         multipop(R1, R2);

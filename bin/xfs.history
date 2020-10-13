@@ -116,3 +116,33 @@ exit
 load --init ../xsm-progs/shell.xsm
 load --init ./xsm-progs/shell.xsm
 exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit
+load --init xsm-progs/shell.xsm
+exit

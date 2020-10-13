@@ -2,6 +2,25 @@
 alias func R1;
 alias pid R2;
 
+//Get pcb entry
+if func == 1 then
+    alias ptable R3;
+    ptable = PROCESS_TABLE + 32;
+    while ptable < PROCESS_TABLE + 16*MAX_PROC_NUM do
+        if [ptable + 4] == TERMINATED then
+            [ptable + 1] = (ptable - PROCESS_TABLE)/16;
+            [ptable + 4] = ALLOCATED;
+            [ptable + 15] = PTLR;
+            [ptable + 14] = PAGE_TABLE_BASE + ((ptable - PROCESS_TABLE)/16)*20;
+            R0 = (ptable - PROCESS_TABLE)/16;
+            return;
+        endif;
+        ptable = ptable + 16;
+    endwhile;
+    R0 = -1;
+    return;
+endif;
+
 //Free user area page
 if func == 2 then
     //call release page on user area page
@@ -28,6 +47,22 @@ if func == 3 then
     R2 = pid;
     call PROCESS_MANAGER;
     multipop(R1, R2, R3);
+
+    if [PROCESS_TABLE + 16*pid + 9] == 9 then
+        return;
+    endif;
+
+    alias ptable R3;
+    ptable = PROCESS_TABLE + 16;
+    while ptable < PROCESS_TABLE + 16*MAX_PROC_NUM do
+        if [ptable + 4] == WAIT_PROCESS && [ptable+5] == pid then
+            [ptable + 4] = READY;
+        endif;
+        if [ptable + 2] == pid then
+            [ptable + 2] = -1;
+        endif;
+        ptable = ptable + 16;
+    endwhile;
 
     [PROCESS_TABLE + 16*pid + 4] = TERMINATED;
     return;

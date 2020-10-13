@@ -32,6 +32,13 @@ while (inode < INODE_TABLE + 16*(MAX_FILE_NUM)) do
     inode = inode + 16;
 endwhile;
 
+if inode >= INODE_TABLE + 16*(MAX_FILE_NUM) then
+    [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
+    [process_table +9] = 0;
+    SP = [process_table + 13];
+    ireturn;
+endif;
+
 //call exit process
 multipush(R0, R1, R2, R3);
 R1 = 3;
@@ -102,11 +109,6 @@ call get_new_page;
 [DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 9] = -1;
 
 
-//set entry point
-[process_table + 13] = 8*512;
-[[PTBR+16]*512] = [[PTBR + 8]*512 + 1];
-[process_table +9] = 0;
-SP = [process_table + 13];
 
 //initalize resource table entry
 alias rc_table_entry R5;
@@ -117,10 +119,13 @@ while(rc_table_entry < 16) do
     rc_table_entry = rc_table_entry + 1;
 endwhile;
 
+//set entry point
+[process_table + 13] = 8*512;
+[[PTBR+16]*512] = [[PTBR + 8]*512 + 1];
+[process_table +9] = 0;
+SP = [process_table + 13];
 //return value
 [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = 0;
-print "break";
-breakpoint;
 ireturn;
 
 get_new_page:

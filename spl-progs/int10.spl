@@ -1,16 +1,17 @@
-//change state of cur process to terminated
-[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1] + 4] = TERMINATED;
+//Exit syscall
+[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1] + 9] = 10;
 
-//check if all process are terminated
-alias ptable R0;
-ptable = PROCESS_TABLE + 16;
+alias userSP R0;
+alias process_table R1;
+userSP = SP;
+process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
 
-while(ptable < 28927 && [ptable + 4] == TERMINATED) do
-    ptable = ptable + 16;
-endwhile;
+//switch to kernel stack
+[process_table + 13] = userSP;
+SP = [process_table + 11]*512 - 1;
 
-if(ptable >= 28927) then
-    halt;
-else
-    call SCHEDULER;
-endif;
+//Call exit process
+R1 = 3;
+R2 = [SYSTEM_STATUS_TABLE + 1];
+call PROCESS_MANAGER;
+call SCHEDULER;

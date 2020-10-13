@@ -1,3 +1,4 @@
+//scheduler
 alias curPID R0;
 curPID = [SYSTEM_STATUS_TABLE + 1];
 //backup BP(BP is not backed up during a syscall)
@@ -40,6 +41,8 @@ PTLR = [next_process_table + 15];
 
 //if the new process is not schedule before, then switch to userstack
 if([next_process_table + 4] == CREATED) then
+    //get bp from first word of kernel stack
+    BP = [[next_process_table + 11]*512];
     SP = [next_process_table + 13];
     [next_process_table + 4] = RUNNING;
     [next_process_table + 9] = 0;

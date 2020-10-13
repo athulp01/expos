@@ -9,8 +9,8 @@ backup;
 multipush(EIP);
 
 if EC != 0 || [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 + 13] == PTLR*512-1 then
-    print "Illegal memory access";
-    print "EIP";
+    print "Ill_mem_access";
+    print EPN;
     R1 = 3;
     R2 = [SYSTEM_STATUS_TABLE + 1];
     call PROCESS_MANAGER;

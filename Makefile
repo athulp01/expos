@@ -12,14 +12,13 @@ xfs: xsm
 
 xsm: interrupt modules user os 
 
-interrupt: $(X_DIR)/int9.xsm $(X_DIR)/int6.xsm $(X_DIR)/int7.xsm $(X_DIR)/int10.xsm $(X_DIR)/timer.xsm $(X_DIR)/console.xsm $(X_DIR)/disk.xsm $(X_DIR)/exception.xsm
+interrupt: $(X_DIR)/int15.xsm  $(X_DIR)/int11.xsm $(X_DIR)/int8.xsm $(X_DIR)/int9.xsm $(X_DIR)/int6.xsm $(X_DIR)/int7.xsm $(X_DIR)/int10.xsm $(X_DIR)/timer.xsm $(X_DIR)/console.xsm $(X_DIR)/disk.xsm $(X_DIR)/exception.xsm
 
 modules: $(X_DIR)/mod0.xsm $(X_DIR)/mod5.xsm $(X_DIR)/mod7.xsm $(X_DIR)/mod1.xsm $(X_DIR)/mod2.xsm $(X_DIR)/mod4.xsm
 
 user: $(X_DIR)/init.xsm $(X_DIR)/idle.xsm
 
 os: $(X_DIR)/os.xsm
-
 
 $(X_DIR)/os.xsm: $(S_DIR)/os.spl
 	spl $<
@@ -53,6 +52,10 @@ $(X_DIR)/int7.xsm: $(S_DIR)/int7.spl
 	spl $<
 	echo "load --int=7 $@" >> commands_xfs
 	
+$(X_DIR)/int8.xsm: $(S_DIR)/int8.spl
+	spl $<
+	echo "load --int=8 $@" >> commands_xfs
+
 $(X_DIR)/int9.xsm: $(S_DIR)/int9.spl
 	spl $<
 	echo "load --int=9 $@" >> commands_xfs
@@ -60,6 +63,14 @@ $(X_DIR)/int9.xsm: $(S_DIR)/int9.spl
 $(X_DIR)/int10.xsm: $(S_DIR)/int10.spl
 	spl $<
 	echo "load --int=10 $@" >> commands_xfs
+
+$(X_DIR)/int15.xsm: $(S_DIR)/int15.spl
+	spl $<
+	echo "load --int=15 $@" >> commands_xfs
+
+$(X_DIR)/int11.xsm: $(S_DIR)/int11.spl
+	spl $<
+	echo "load --int=11 $@" >> commands_xfs
 
 $(X_DIR)/mod7.xsm: $(S_DIR)/mod7.spl
 	spl $<
