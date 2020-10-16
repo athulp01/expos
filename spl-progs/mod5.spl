@@ -27,7 +27,7 @@ while([next_process_table + 4] != READY && [next_process_table + 4] != CREATED) 
 endwhile;
 //if there is no process to schedule, then schedule idle process
 newPID = [next_process_table + 1];
-if(next_process_table == 28928) then
+if(next_process_table >= 28928) then
     newPID = 0;
     next_process_table = PROCESS_TABLE;
 endif;
@@ -49,7 +49,7 @@ if([next_process_table + 4] == CREATED) then
     ireturn;
 endif;
 
-//transfer control to instruction after CALL MODULE_5
+
 [next_process_table + 4] = RUNNING;
 BP = [SP];
 SP = SP - 1;

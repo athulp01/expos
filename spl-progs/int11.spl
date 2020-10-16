@@ -39,7 +39,6 @@ if syscall == 13 then
     multipush(R0, R1, R2, R3);
     call SCHEDULER;
     multipop(R0, R1, R2, R3);
-    breakpoint;
 endif;
 
 if syscall == 14 then

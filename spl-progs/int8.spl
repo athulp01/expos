@@ -18,10 +18,13 @@ call PROCESS_MANAGER;
 new_pid = R0;
 multipop(R0, R1);
 
+print new_pid;
 // if no pid is available retunr -1
 if new_pid == -1 then
     [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
-    return;
+    [process_table +9] = 0;
+    SP = [process_table + 13];
+    ireturn;
 endif;
 
 alias new_page_num R3;
@@ -51,7 +54,6 @@ call get_new_page;
 //pid is set by PROCESS_MANAGER
 [PROCESS_TABLE + new_pid*16 + 2] = [SYSTEM_STATUS_TABLE + 1];
 [PROCESS_TABLE + new_pid*16 + 3] = [process_table + 3];
-[PROCESS_TABLE + new_pid*16 + 4] = CREATED;
 [PROCESS_TABLE + new_pid*16 + 6] = [process_table + 6];
 [PROCESS_TABLE + new_pid*16 + 7] = [process_table + 7];
 //no need to intialize input buffer
@@ -74,6 +76,7 @@ rc_child = [PROCESS_TABLE + 16*new_pid+11]*512 + RESOURCE_TABLE_OFFSET;
 rc_ent = 0;
 while(rc_ent < 16) do
     [rc_child + rc_ent] = [rc_parent + rc_ent];
+    [rc_child + rc_ent + 1] = [rc_parent + rc_ent + 1];
     //Increment corresponding file or semaphore table entries
     if [rc_parent + rc_ent] == FILE then
         [OPEN_FILE_TABLE + [rc_parent + rc_ent + 1]] = [OPEN_FILE_TABLE + [rc_parent+ rc_ent +1]] + 1;
@@ -115,6 +118,9 @@ while usersp_idx < 1024 do
     endif;
     usersp_idx = usersp_idx + 1;
 endwhile;
+
+//set the state as created
+[PROCESS_TABLE + new_pid*16 + 4] = CREATED;
 
 //store bp at top of kernel stack, so that scheduler can restore it 
 [[PROCESS_TABLE + 16*new_pid + 11]*512] = BP;

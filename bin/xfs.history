@@ -146,3 +146,40 @@ load --init xsm-progs/shell.xsm
 exit
 load --init xsm-progs/shell.xsm
 exit
+help
+load --exec forktest.expl
+:q
+exit
+../xsm-progs/forktest.xsm
+load --exec ../xsm-progs/forktest.xsm
+exit
+load --exec ../xsm-progs/forktest.xsm
+rm forktest.xsm
+load --exec ../xsm-progs/forktest.xsm
+exit
+rm forktest.xsm
+load --exec ../xsm-progs/forktest.xsm
+exit
+rm forktest.xsm
+load --exec ../xsm-progs/forktest.xsm
+load --exec ./xsm-progs/forktest.xsm
+exit
+load --exec ./xsm-progs/forktest.xsm
+rm forktest.xsm
+load --exec ./xsm-progs/forktest.xsm
+exit
+rm forktest.xsm
+load --exec ./xsm-progs/forktest.xsm
+exit
+rm forktest.xsm
+load --exec ./xsm-progs/forktest.xsm
+exit
+rm forktest.xsm
+load --exec ./xsm-progs/forktest.xsm
+exit
+rm forktest.xsm
+load --exec ./xsm-progs/forktest.xsm
+exit
+rm forktest.xsm
+load --exec ./xsm-progs/forktest.xsm
+exit

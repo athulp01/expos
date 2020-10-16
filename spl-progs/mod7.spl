@@ -66,7 +66,7 @@ loadi(33, 46);
 alias page R1;
 page = 0;
 while page <= 127 do
-    if page >= 80 then
+    if page >= 83 then
         [MEMORY_FREE_LIST + page] = 0;
     else 
         [MEMORY_FREE_LIST + page] = 1;
@@ -75,7 +75,7 @@ while page <= 127 do
 endwhile;
 
 //mem_free_count
-[SYSTEM_STATUS_TABLE + 2] = 47;
+[SYSTEM_STATUS_TABLE + 2] = 45;
 //wait_mem_count
 [SYSTEM_STATUS_TABLE + 3] = 0;
 // Page table for init
