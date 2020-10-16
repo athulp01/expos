@@ -18,7 +18,6 @@ call PROCESS_MANAGER;
 new_pid = R0;
 multipop(R0, R1);
 
-print new_pid;
 // if no pid is available retunr -1
 if new_pid == -1 then
     [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
