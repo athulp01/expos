@@ -64,15 +64,15 @@ if func == 5 then
     pid = 1;
     //Search disk map table of all proces
     while pid < MAX_PROC_NUM do
-        code_page = 1;
+        code_page = 4;
         //search all code pages of that process
-        while code_page <= 4 do
+        while code_page <= 7 do
             //if the same block is loaded by another process
-            if [DISK_MAP_TABLE + 10*pid + 3 + code_page] == block_num then
+            if [DISK_MAP_TABLE + 10*pid + code_page] == block_num then
                 //if code block found, check if in memory
-                if [PAGE_TABLE_BASE + 20*pid + 7 + code_page] != -1 then
+                if [PAGE_TABLE_BASE + 20*pid + 2*code_page] != -1 then
                     //if so return and increment memory free list
-                    R0 = [PAGE_TABLE_BASE + 20*pid + 7 + code_page];
+                    R0 = [PAGE_TABLE_BASE + 20*pid + 2*code_page];
                     [MEMORY_FREE_LIST + R0] = [MEMORY_FREE_LIST + R0] + 1;
                     return;
                 endif;

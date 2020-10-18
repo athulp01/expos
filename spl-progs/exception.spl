@@ -9,15 +9,24 @@ backup;
 multipush(EIP);
 
 if EC != 0 || [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 + 13] == PTLR*512-1 then
-    print "Ill_mem_access";
-    print EPN;
+    if EC == 1 then
+        print "INSTR_ERR";
+    endif;
+    if EC == 2 then
+        print "MEM_ERR";
+    endif;
+    if EC == 3 then
+        print "ARITH_ERR";
+    endif;
+    //don't remove this breakpoint
+    breakpoint;
     R1 = 3;
     R2 = [SYSTEM_STATUS_TABLE + 1];
     call PROCESS_MANAGER;
     call SCHEDULER;
 endif;
 
-if EPN == 3 || EPN ==4 || EPN == 5 || EPN == 6 then
+if EPN == 4 || EPN ==5 || EPN == 6 || EPN == 7 then
     alias disk_block R2;
     disk_block = [DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE + 1]*10 + EPN];
     R1 = 5;
@@ -25,6 +34,7 @@ if EPN == 3 || EPN ==4 || EPN == 5 || EPN == 6 then
     R3 = [SYSTEM_STATUS_TABLE + 1];
     call MEMORY_MANAGER;
     [PAGE_TABLE_BASE + [SYSTEM_STATUS_TABLE+1]*20 + EPN*2] = R0;
+    breakpoint;
     [PAGE_TABLE_BASE + [SYSTEM_STATUS_TABLE+1]*20 + EPN*2 + 1] = "1100";
 else
     alias page_num_1 R3;
@@ -50,7 +60,7 @@ restore;
 SP = [PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13];
 
 SP = SP + 1;
-[SP] = EIP;
+[[PTBR + 2*(SP/512)]*512 + (SP%512)] = EIP;
 //set mode to 0
 [PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 9] = 0;
 ireturn;

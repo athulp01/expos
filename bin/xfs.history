@@ -183,3 +183,39 @@ exit
 rm forktest.xsm
 load --exec ./xsm-progs/forktest.xsm
 exit
+load --exec ./xsm-progs/ll.xsm
+exit
+rm ll.xsm
+load --exec ./xsm-p/ll.xsm
+load --exec ../xsm-progs/ll.xsm
+exit
+rm ll.xsm
+load --exec ./xsm-progs/ll.xsm
+exit
+rm ll.xsm
+load --exec ./xsm-progs/ll.xsm
+rm ll.xsm
+load --exec ./xsm-progs/ll.xsm
+exit
+rm ll.xsm
+load --exec ./xsm-progs/ll.xsm
+exit
+rm ll.xsm
+load --exec ./xsm-progs/ll.xsm
+exit
+rm ll.xsm
+exit
+load --exec ./xsm-progs/ll.xsm
+exit
+rm ll.xsm
+load --exec ./xsm-progs/ll.xsm
+exit
+rm ll.xsm
+load --exec ./xsm-progs/ll.xsm
+exit
+rm ll.xsm
+load --exec ./xsm-progs/ll.xsm
+exit
+rm ll.xsm
+load --exec ./xsm-progs/ll.xsm
+exit
