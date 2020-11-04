@@ -81,7 +81,7 @@ while(rc_ent < 16) do
         [OPEN_FILE_TABLE + [rc_parent + rc_ent + 1]] = [OPEN_FILE_TABLE + [rc_parent+ rc_ent +1]] + 1;
     endif;
     if [rc_parent + rc_ent] == SEMAPHORE then
-        [SEMAPHORE_TABLE + [rc_parent + rc_ent + 1]] = [SEMAPHORE_TABLE + [rc_parent + rc_ent + 1]] + 1;
+        [SEMAPHORE_TABLE + 4*[rc_parent + rc_ent + 1]] = [SEMAPHORE_TABLE + 4*[rc_parent + rc_ent + 1]] + 1;
     endif;
     rc_ent = rc_ent + 2;
 endwhile;
