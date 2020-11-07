@@ -8,7 +8,7 @@ process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
 SP = [process_table + 11]*512 - 1;
 //get fd from stack by doing addr translation manually
 alias call_num R2;
-call_num = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+call_num = [[PTBR + 2*(userSP - 5)/512]*512 + (userSP-5)%512];
 
 //mem addr of resource table
 alias rc_base R4;
@@ -26,8 +26,8 @@ if call_num == 19 then
     while (rc < 16) do
         if [rc_base + rc] == SEMAPHORE && [rc_base + rc + 1] == semid then
             break;
-        rc = rc + 2;
         endif;
+        rc = rc + 2;
     endwhile;
 
     //if semphonre is not valid then exit
@@ -35,11 +35,12 @@ if call_num == 19 then
         [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
         [process_table +9] = 0;
         SP = [process_table + 13];
+        print "lockerror";
         ireturn;
     endif;
 
     //while the sem is locked by other process
-    while [SEMAPHORE_TABLE + semid*4] != [SYSTEM_STATUS_TABLE + 1] do
+    while [SEMAPHORE_TABLE + semid*4] != -1 && [SEMAPHORE_TABLE + semid*4] != [SYSTEM_STATUS_TABLE + 1] do
         //put the currrent process to wait
         [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1] + 4] = WAIT_SEMAPHORE;
         [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1] + 5] = semid;
@@ -63,8 +64,8 @@ if call_num == 20 then
     while (rc < 16) do
         if [rc_base + rc] == SEMAPHORE && [rc_base + rc + 1] == semid then
             break;
-        rc = rc + 2;
         endif;
+        rc = rc + 2;
     endwhile;
 
     //if not valid then return
@@ -92,7 +93,7 @@ if call_num == 20 then
         alias ptable R6;
         ptable = 0;
         while (ptable < MAX_PROC_NUM) do
-            if [PROCESS_TABLE + 16*ptable + 4] == WAIT_SEMAPHORE && [PROCESS_TABLE + 16*ptable + 5] == [SYSTEM_STATUS_TABLE + 1] then
+            if [PROCESS_TABLE + 16*ptable + 4] == WAIT_SEMAPHORE && [PROCESS_TABLE + 16*ptable + 5] == semid then
                 [PROCESS_TABLE + 16*ptable + 4] = READY;
             endif;
             ptable = ptable + 1;

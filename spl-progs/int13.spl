@@ -8,7 +8,7 @@ process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
 SP = [process_table + 11]*512 - 1;
 
 alias call_num R2;
-call_num = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+call_num = [[PTBR + 2*(userSP - 5)/512]*512 + (userSP-5)%512];
 
 //mem addr of resource table
 alias rc_base R4;
@@ -23,8 +23,8 @@ if call_num == 17 then
     while (free_rc < 16) do
         if [rc_base + free_rc] == -1 then
             break;
-        free_rc = free_rc + 2;
         endif;
+        free_rc = free_rc + 2;
     endwhile;
 
     //if not found return -1
@@ -40,8 +40,9 @@ if call_num == 17 then
     R1 = 6;
     R2 = [SYSTEM_STATUS_TABLE + 1];
     call RESOURCE_MANAGER;
-    [rc_base + free_rc + 1] = R0;
+    R5 = R0;
     multipop(R0, R1, R2, R3, R4);
+    [rc_base + free_rc + 1] = R5;
 
     //if no semphonre found return -2
     if [rc_base + free_rc + 1] == -1 then
@@ -68,8 +69,8 @@ if call_num == 18 then
     while (rc < 16) do
         if [rc_base + rc] == SEMAPHORE && [rc_base + rc + 1] == semid then
             break;
-        rc = rc + 2;
         endif;
+        rc = rc + 2;
     endwhile;
 
     //doubt: The descriptor is invalid if not in the range 0 - 7

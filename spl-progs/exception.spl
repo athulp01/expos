@@ -34,7 +34,6 @@ if EPN == 4 || EPN ==5 || EPN == 6 || EPN == 7 then
     R3 = [SYSTEM_STATUS_TABLE + 1];
     call MEMORY_MANAGER;
     [PAGE_TABLE_BASE + [SYSTEM_STATUS_TABLE+1]*20 + EPN*2] = R0;
-    breakpoint;
     [PAGE_TABLE_BASE + [SYSTEM_STATUS_TABLE+1]*20 + EPN*2 + 1] = "1100";
 else
     alias page_num_1 R3;

@@ -44,6 +44,7 @@ if func == 7 then
     alias pid R3;
     //Only release if locked by current process
     if [SEMAPHORE_TABLE + 4*semidx] == pid then
+        print "release";
         [SEMAPHORE_TABLE + 4*semidx] = -1;
         alias ptable R4;
         ptable = 0;
@@ -55,10 +56,9 @@ if func == 7 then
             ptable = ptable + 1;
         endwhile;
         //dectement process count
-        [SEMAPHORE_TABLE + 4*semidx + 1] = [SEMAPHORE_TABLE + 4*semidx + 1] - 1;
     endif;
-        return;
-
+    [SEMAPHORE_TABLE + 4*semidx + 1] = [SEMAPHORE_TABLE + 4*semidx + 1] - 1;
+    return;
 endif;
 
 

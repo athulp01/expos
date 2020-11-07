@@ -81,7 +81,7 @@ while(rc_ent < 16) do
         [OPEN_FILE_TABLE + [rc_parent + rc_ent + 1]] = [OPEN_FILE_TABLE + [rc_parent+ rc_ent +1]] + 1;
     endif;
     if [rc_parent + rc_ent] == SEMAPHORE then
-        [SEMAPHORE_TABLE + 4*[rc_parent + rc_ent + 1]] = [SEMAPHORE_TABLE + 4*[rc_parent + rc_ent + 1]] + 1;
+        [SEMAPHORE_TABLE + 4*[rc_parent + rc_ent + 1] + 1] = [SEMAPHORE_TABLE + 4*[rc_parent + rc_ent + 1] + 1] + 1;
     endif;
     rc_ent = rc_ent + 2;
 endwhile;
@@ -113,7 +113,7 @@ while usersp_idx < 1024 do
     if usersp_idx < 512 then
         [[new_ptbr + 16]*512 + usersp_idx] = [[PTBR + 16]*512 + usersp_idx];
     else
-        [[new_ptbr + 18]*512 + usersp_idx] = [[PTBR + 18]*512 + usersp_idx];
+        [[new_ptbr + 18]*512 + usersp_idx - 512] = [[PTBR + 18]*512 + usersp_idx - 512];
     endif;
     usersp_idx = usersp_idx + 1;
 endwhile;
