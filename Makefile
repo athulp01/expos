@@ -2,6 +2,12 @@ X_DIR = /home/athul/Workspace/expos/myexpos/xsm-progs
 S_DIR = /home/athul/Workspace/expos/myexpos/spl-progs
 E_DIR = /home/athul/Workspace/expos/myexpos/expl-progs
 
+INT_SPL = $(wildcard $(S_DIR)/int*.spl)
+INT_XSM = $(INT_SPL:$(S_DIR)/%.spl=$(X_DIR)/%.xsm)
+
+MOD_SPL = $(wildcard $(S_DIR)/mod*.spl)
+MOD_XSM = $(MOD_SPL:$(S_DIR)/%.spl=$(X_DIR)/%.xsm)
+
 .PHONY: all xsm xfs clean interrupt modules user os
 
 all: xfs
@@ -12,13 +18,21 @@ xfs: xsm
 
 xsm: interrupt modules user os 
 
-interrupt: $(X_DIR)/int13.xsm  $(X_DIR)/int14.xsm $(X_DIR)/int15.xsm  $(X_DIR)/int11.xsm $(X_DIR)/int8.xsm $(X_DIR)/int9.xsm $(X_DIR)/int6.xsm $(X_DIR)/int7.xsm $(X_DIR)/int10.xsm $(X_DIR)/timer.xsm $(X_DIR)/console.xsm $(X_DIR)/disk.xsm $(X_DIR)/exception.xsm
+interrupt: $(INT_XSM) $(X_DIR)/timer.xsm $(X_DIR)/console.xsm $(X_DIR)/disk.xsm $(X_DIR)/exception.xsm
 
-modules: $(X_DIR)/mod0.xsm $(X_DIR)/mod5.xsm $(X_DIR)/mod7.xsm $(X_DIR)/mod1.xsm $(X_DIR)/mod2.xsm $(X_DIR)/mod4.xsm
+modules: $(MOD_XSM)
 
-user: $(X_DIR)/init.xsm $(X_DIR)/idle.xsm
+user: $(X_DIR)/init.xsm 
 
-os: $(X_DIR)/os.xsm
+os: $(X_DIR)/os.xsm $(X_DIR)/idle.xsm
+
+$(X_DIR)/int%.xsm: $(S_DIR)/int%.spl
+	spl $<
+	echo "load --int=`echo $@ | tr -d -c 0-9` $@" >> commands_xfs
+
+$(X_DIR)/mod%.xsm: $(S_DIR)/mod%.spl
+	spl $<
+	echo "load --module `echo $@ | tr -d -c 0-9` $@" >> commands_xfs
 
 $(X_DIR)/os.xsm: $(S_DIR)/os.spl
 	spl $<
@@ -43,66 +57,6 @@ $(X_DIR)/exception.xsm: $(S_DIR)/exception.spl
 $(X_DIR)/console.xsm: $(S_DIR)/console.spl
 	spl $<
 	echo "load --int=console $@" >> commands_xfs
-
-$(X_DIR)/int6.xsm: $(S_DIR)/int6.spl
-	spl $<
-	echo "load --int=6 $@" >> commands_xfs
-	
-$(X_DIR)/int7.xsm: $(S_DIR)/int7.spl
-	spl $<
-	echo "load --int=7 $@" >> commands_xfs
-	
-$(X_DIR)/int8.xsm: $(S_DIR)/int8.spl
-	spl $<
-	echo "load --int=8 $@" >> commands_xfs
-
-$(X_DIR)/int9.xsm: $(S_DIR)/int9.spl
-	spl $<
-	echo "load --int=9 $@" >> commands_xfs
-
-$(X_DIR)/int10.xsm: $(S_DIR)/int10.spl
-	spl $<
-	echo "load --int=10 $@" >> commands_xfs
-
-$(X_DIR)/int15.xsm: $(S_DIR)/int15.spl
-	spl $<
-	echo "load --int=15 $@" >> commands_xfs
-
-$(X_DIR)/int11.xsm: $(S_DIR)/int11.spl
-	spl $<
-	echo "load --int=11 $@" >> commands_xfs
-
-$(X_DIR)/int14.xsm: $(S_DIR)/int14.spl
-	spl $<
-	echo "load --int=14 $@" >> commands_xfs
-
-$(X_DIR)/int13.xsm: $(S_DIR)/int13.spl
-	spl $<
-	echo "load --int=13 $@" >> commands_xfs
-
-$(X_DIR)/mod7.xsm: $(S_DIR)/mod7.spl
-	spl $<
-	echo "load --module 7 $@" >> commands_xfs
-
-$(X_DIR)/mod4.xsm: $(S_DIR)/mod4.spl
-	spl $<
-	echo "load --module 4 $@" >> commands_xfs
-
-$(X_DIR)/mod0.xsm: $(S_DIR)/mod0.spl
-	spl $<
-	echo "load --module 0 $@" >> commands_xfs
-
-$(X_DIR)/mod5.xsm: $(S_DIR)/mod5.spl
-	spl $<
-	echo "load --module 5 $@" >> commands_xfs
-
-$(X_DIR)/mod1.xsm: $(S_DIR)/mod1.spl
-	spl $<
-	echo "load --module 1 $@" >> commands_xfs
-
-$(X_DIR)/mod2.xsm: $(S_DIR)/mod2.spl
-	spl $<
-	echo "load --module 2 $@" >> commands_xfs
 
 $(X_DIR)/idle.xsm: $(E_DIR)/idle.expl
 	expl $<
