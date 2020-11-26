@@ -1,8 +1,13 @@
 #!/bin/bash
-touch comm
 expl /home/athul/Workspace/expos/myexpos/expl-progs/$1.expl
-echo "rm $1.xsm" &>> comm
-echo "load --exec /home/athul/Workspace/expos/myexpos/xsm-progs/$1.xsm" &>> comm
+touch comm
+echo "ls" > comm
+if xfs run comm | grep "^Filename: $1.xsm"; then
+    echo "rm $1.xsm" > comm
+    echo "load --exec /home/athul/Workspace/expos/myexpos/xsm-progs/$1.xsm" &>> comm
+else
+    echo "load --exec /home/athul/Workspace/expos/myexpos/xsm-progs/$1.xsm" &> comm
+fi
 echo "exit" &>> comm
 xfs run ./comm
 rm comm
