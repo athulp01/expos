@@ -63,6 +63,11 @@ loadi(31, 44);
 //int15
 loadi(32, 45);
 loadi(33, 46);
+//int4 
+loadi(10, 23);
+loadi(11, 24);
+//root
+loadi(62, 5);
 
 
 //set disk as free
@@ -167,6 +172,26 @@ endwhile;
 
 //set terminal free
 [TERMINAL_STATUS_TABLE] = 0;
+
+alias file_table R3;
+file_table = 0;
+
+while file_table < MAX_FILE_NUM do
+    [FILE_STATUS_TABLE +4*file_table] = -1;
+    [FILE_STATUS_TABLE +4*file_table +1] = -1;
+    file_table = file_table + 1;
+endwhile;
+
+alias buffer_table R3;
+buffer_table = 0;
+while buffer_table < MAX_BUFFER do
+    [BUFFER_TABLE + 4*buffer_table + 0] = -1;
+    [BUFFER_TABLE + 4*buffer_table + 1] = 0;
+    [BUFFER_TABLE + 4*buffer_table + 2] = -1;
+    buffer_table = buffer_table + 1;
+endwhile;
+
+[PROCESS_TABLE + 16 + 3] = 1;
 
 //return to os startup code
 return;

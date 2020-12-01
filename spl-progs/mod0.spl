@@ -15,6 +15,49 @@ if func == 3 then
     return;
 endif;
 
+//Acquire inode
+if func == 4 then
+    alias inode R2;
+    alias pid R3;
+    while [FILE_STATUS_TABLE + 4*inode] != -1 do
+        [PROCESS_TABLE + 16*pid + 4] = WAIT_FILE;
+        [PROCESS_TABLE + 16*pid + 5] = inode;
+        multipush(R1, R2, R3);
+        call SCHEDULER;
+        multipop(R1, R2, R3);
+    endwhile;
+    //return if file got deleted
+    if [INODE_TABLE + 16*inode + 1] == -1 then
+        R0 = -1;
+        return;
+    endif;
+    //lock the file
+    [FILE_STATUS_TABLE + 4*inode] = pid;
+    return;
+endif;
+
+//Release inode
+if func == 5 then
+    alias inode R2;
+    alias pid R3;
+    if [FILE_STATUS_TABLE + 4*inode] != pid then
+        R0 = -1;
+        return;
+    endif;
+
+    [FILE_STATUS_TABLE + 4*inode] = -1;
+    alias idx R4;
+    idx = 0;
+    while idx < MAX_PROC_NUM do
+        if [PROCESS_TABLE + idx*16 +4] == WAIT_FILE && [PROCESS_TABLE + idx*16 + 5] == inode then
+            [PROCESS_TABLE + idx*16 + 4] = READY;
+        endif;
+        idx = idx + 1;
+    endwhile;
+    return;
+endif;
+
+
 //Acquire semaphore
 if func == 6 then
     alias semidx R4;

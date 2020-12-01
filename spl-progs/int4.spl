@@ -21,6 +21,7 @@ retcode = 0;
 //Create
 if call_num == 1 then
     [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 1;
+    breakpoint;
     alias fileidx R4;
     alias freeidx R5;
     freeidx = -1;
@@ -37,7 +38,6 @@ if call_num == 1 then
         fileidx = fileidx + 1;
     endwhile;
     
-    breakpoint;
     if fileidx == -1 then
         retcode = -1;
         call ret;
@@ -58,6 +58,7 @@ if call_num == 1 then
     [ROOT_FILE + fileidx*8 + 2] = DATA;
     [ROOT_FILE + fileidx*8 + 3] = [INODE_TABLE + fileidx*16 + 3];
     [ROOT_FILE + fileidx*8 + 4] = perm;
+    breakpoint;
 endif;
 
 if call_num == 4 then

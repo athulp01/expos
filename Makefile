@@ -22,7 +22,7 @@ interrupt: $(INT_XSM) $(X_DIR)/timer.xsm $(X_DIR)/console.xsm $(X_DIR)/disk.xsm 
 
 modules: $(MOD_XSM)
 
-user: $(X_DIR)/init.xsm 
+user: $(X_DIR)/shell.xsm 
 
 os: $(X_DIR)/os.xsm $(X_DIR)/idle.xsm
 
@@ -38,7 +38,7 @@ $(X_DIR)/os.xsm: $(S_DIR)/os.spl
 	spl $<
 	echo "load --os $@" >> commands_xfs
 
-$(X_DIR)/init.xsm: $(E_DIR)/init.expl
+$(X_DIR)/shell.xsm: $(E_DIR)/shell.expl
 	expl $<
 	echo "load --init $@" >> commands_xfs
 
@@ -62,5 +62,5 @@ $(X_DIR)/idle.xsm: $(E_DIR)/idle.expl
 	expl $<
 	echo "load --idle $@" >> commands_xfs
 
-clean: $(X_DIR)/os.xsm $(X_DIR)/timer.xsm $(X_DIR)/idle.xsm
-	rm $^
+clean: 
+	rm $(X_DIR)/*.xsm
