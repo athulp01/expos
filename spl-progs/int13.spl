@@ -61,7 +61,7 @@ if call_num == 18 then
     [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 18;
 
     alias semid R3;
-    semid = [[PTBR + 2*(userSP - 5)/512]*512 + (userSP-5)%512];
+    semid = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
 
     //get the corresponding rc table entry
     alias rc R5;
@@ -73,10 +73,8 @@ if call_num == 18 then
         rc = rc + 2;
     endwhile;
 
-    //doubt: The descriptor is invalid if not in the range 0 - 7
-    //This statement is given in docs but max num of semphonre is 32
-    //check validity of semphonre
-    if rc == 16 || semid <0 || semid > 31 then
+    //if sem is not valid
+    if rc == 16 || semid <0 || semid > 7 then
         [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
         [process_table +9] = 0;
         SP = [process_table + 13];

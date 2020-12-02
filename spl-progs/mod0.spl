@@ -1,6 +1,46 @@
 //Resource Manager
 alias func R1;
 
+//Acquire buffer
+if func == 1 then
+    alias buffer R2;
+    alias pid R3;
+
+    while [BUFFER_TABLE + 4*buffer + 2] != -1 do
+        [SYSTEM_STATUS_TABLE + pid*16 + 4] = WAIT_BUFFER;
+        [SYSTEM_STATUS_TABLE + pid*16 + 5] = buffer;
+        multipush(R1, R2, R3);
+        call SCHEDULER;
+        multipop(R1, R2, R3);
+    endwhile;
+    //lock the buffer
+    [BUFFER_TABLE + 4*buffer + 2] = pid;
+    return;
+endif;
+
+//Release buffer
+if func == 2 then
+    alias buffer R2;
+    alias pid R3;
+    //if not acquired by same pid
+    if [BUFFER_TABLE + 4*buffer + 2] != pid then
+        R0 = -1;
+        return;
+    endif;
+
+    //release
+    [BUFFER_TABLE + 4*buffer + 2] = -1;
+    alias idx R4;
+    idx = 0;
+    while idx < MAX_PROC_NUM do
+        if [PROCESS_TABLE + idx*16 +4] == WAIT_BUFFER && [PROCESS_TABLE + idx*16 + 5] == buffer then
+            [PROCESS_TABLE + idx*16 + 4] = READY;
+        endif;
+        idx = idx + 1;
+    endwhile;
+    return;
+endif;
+
 //Acquire disk
 if func == 3 then
     alias pid R2;
@@ -19,6 +59,7 @@ endif;
 if func == 4 then
     alias inode R2;
     alias pid R3;
+    //busy wait until inode is free
     while [FILE_STATUS_TABLE + 4*inode] != -1 do
         [PROCESS_TABLE + 16*pid + 4] = WAIT_FILE;
         [PROCESS_TABLE + 16*pid + 5] = inode;
@@ -40,11 +81,13 @@ endif;
 if func == 5 then
     alias inode R2;
     alias pid R3;
+    //if not acquired by same pid
     if [FILE_STATUS_TABLE + 4*inode] != pid then
         R0 = -1;
         return;
     endif;
 
+    //release
     [FILE_STATUS_TABLE + 4*inode] = -1;
     alias idx R4;
     idx = 0;

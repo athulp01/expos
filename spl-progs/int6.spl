@@ -15,11 +15,72 @@ SP = [process_table + 11]*512 - 1;
 alias fd R2;
 fd = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
 
+alias word_addr R3;
+word_addr = [[PTBR + 2*(userSP - 3)/512]*512 + ((userSP-3)%512)];
+
+alias rc_base R4;
+rc_base =[process_table + 11]*512 + RESOURCE_TABLE_OFFSET;
+
+alias retcode R8;
+alias inode R6;
+
 if fd != -1 then
-    [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
+    if fd < 0 || fd > 7 || [rc_base + 2*fd] != FILE then
+        retcode = -1;
+        call ret;
+    endif;
+
+    alias openfileid R5;
+    openfileid = [rc_base + 2*fd + 1];
+    inode = [OPEN_FILE_TABLE + 4*openfileid];
+
+    //Acquire inode
+    multipush(R0, R1, R2, R3, R4, R5, R6);
+    R1 = 4;
+    R2 = inode;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;
+
+    if R0 == -1 then
+        retcode = -1;
+        call ret;
+    endif;
+    multipop(R0, R1, R2, R3, R4, R5, R6);
+
+    if inode == INODE_ROOT then
+        //if lseek at end of rootfile
+        if [OPEN_FILE_TABLE + 4*openfileid + 2]== 480 then
+            call release;
+            retcode = -2;
+            call ret;
+        endif;
+        [word_addr] = [ROOT_FILE + [OPEN_FILE_TABLE + 4*openfileid + 2]];
+        //increment lseek
+        [OPEN_FILE_TABLE + 4*openfileid + 2] = [OPEN_FILE_TABLE + 4*openfileid + 2] + 1;
+    else 
+        //if EOF
+        if [OPEN_FILE_TABLE + 4*openfileid + 2] == [INODE_TABLE + 16*inode + 2] then
+            call release;
+            retcode = -2;
+            call ret;
+        endif;
+        
+        alias block R7;
+        block = [INODE_TABLE + 16*inode + 8 + [OPEN_FILE_TABLE + 4*openfileid + 2]/512];
+
+        //Buffered read
+        multipush(R0, R1, R2, R3, R4, R5, R6, R7);
+        R1 = 2;
+        R2 = block;
+        R4 = word_addr;
+        R3 =[OPEN_FILE_TABLE + 4*openfileid + 2]%512;
+        call FILE_MANAGER;
+        multipop(R0, R1, R2, R3, R4, R5, R6, R7);
+        //increment lseek
+        [OPEN_FILE_TABLE + 4*openfileid + 2] = [OPEN_FILE_TABLE + 4*openfileid + 2] + 1;
+    endif;
+    call release;
 else 
-    alias word_addr R3;
-    word_addr = [[PTBR + 2*(userSP - 3)/512]*512 + ((userSP-3)%512)];
     multipush(R0, R1, R2, R3);
     //terminal read
     R1 = 4;
@@ -30,6 +91,19 @@ else
     [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = 0;
 endif;
 
-[process_table +9] = 0;
-SP = [process_table + 13];
-ireturn;
+retcode = 0;
+call ret;
+
+release:
+    multipush(R0, R1, R2, R3, R4, R5, R6, R7);
+    R1 = 5;
+    R2 = inode;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;
+    multipop(R0, R1, R2, R3, R4, R5, R6, R7);
+    return;
+ret:
+    [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = retcode;
+    [process_table +9] = 0;
+    SP = [process_table + 13];
+    ireturn;

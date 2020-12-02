@@ -68,6 +68,12 @@ loadi(10, 23);
 loadi(11, 24);
 //root
 loadi(62, 5);
+//int5 
+loadi(12, 25);
+loadi(13, 26);
+//mod3 
+loadi(46, 59);
+loadi(47, 60);
 
 
 //set disk as free
@@ -189,6 +195,16 @@ while buffer_table < MAX_BUFFER do
     [BUFFER_TABLE + 4*buffer_table + 1] = 0;
     [BUFFER_TABLE + 4*buffer_table + 2] = -1;
     buffer_table = buffer_table + 1;
+endwhile;
+
+alias file_table R3;
+file_table = 0;
+while file_table < MAX_OPENFILE_NUM do 
+    [OPEN_FILE_TABLE + 4*file_table] = -1;
+    [OPEN_FILE_TABLE + 4*file_table + 1] = -1;
+    [OPEN_FILE_TABLE + 4*file_table + 2] = -1;
+    [OPEN_FILE_TABLE + 4*file_table + 3] = -1;
+    file_table = file_table + 1;
 endwhile;
 
 [PROCESS_TABLE + 16 + 3] = 1;

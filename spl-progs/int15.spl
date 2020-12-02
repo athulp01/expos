@@ -3,7 +3,6 @@ alias process_table R1;
 userSP = SP;
 process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
 
-breakpoint;
 //switch to kernel stack
 [process_table + 13] = userSP;
 SP = [process_table + 11]*512 - 1;

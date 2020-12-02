@@ -78,7 +78,7 @@ while(rc_ent < 16) do
     [rc_child + rc_ent + 1] = [rc_parent + rc_ent + 1];
     //Increment corresponding file or semaphore table entries
     if [rc_parent + rc_ent] == FILE then
-        [OPEN_FILE_TABLE + [rc_parent + rc_ent + 1]] = [OPEN_FILE_TABLE + [rc_parent+ rc_ent +1]] + 1;
+        [OPEN_FILE_TABLE + 4*[rc_parent + rc_ent + 1] + 1] = [OPEN_FILE_TABLE + 4*[rc_parent+ rc_ent +1] + 1] + 1;
     endif;
     if [rc_parent + rc_ent] == SEMAPHORE then
         [SEMAPHORE_TABLE + 4*[rc_parent + rc_ent + 1] + 1] = [SEMAPHORE_TABLE + 4*[rc_parent + rc_ent + 1] + 1] + 1;
