@@ -1,0 +1,51 @@
+alias userSP R0;
+alias process_table R1;
+userSP = SP;
+process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
+//switch to kernel stack
+[process_table + 13] = userSP;
+SP = [process_table + 11]*512 - 1;
+
+alias retcode R9;
+[process_table +9] = 28;
+if [SYSTEM_STATUS_TABLE + 1] != 2 then
+    retcode = -1;
+    call ret;
+endif;
+
+//kill all processs
+multipush(R0, R1, R2);
+R1 = 5;
+R2 = [SYSTEM_STATUS_TABLE + 1];
+call PROCESS_MANAGER;
+multipop(R0, R1, R2);
+
+[process_table + 4] = TERMINATED;
+
+//get entry point of shell from code page
+alias ip R2;
+ip = [[PAGE_TABLE_BASE + 20*2 + 8]*512 + 1];
+//place it at starting of stack
+[[PAGE_TABLE_BASE + 20*2 + 16]*512] = ip;
+
+//reset user stack
+[process_table + 13] = 4096;
+
+//wakeup login process_table
+[PROCESS_TABLE + 16 + 4] = READY;
+
+//reset userid
+[SYSTEM_STATUS_TABLE] = 0;
+
+multipush(R0, R1, R2);
+call SCHEDULER;
+multipop(R0, R1, R2);
+
+retcode = 0;
+call ret;
+
+ret:
+[[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = retcode;
+[process_table +9] = 0;
+SP = [process_table + 13];
+ireturn;

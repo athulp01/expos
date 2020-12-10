@@ -1,6 +1,5 @@
 //init
 loadi(65,7);
-loadi(66,8);
 //exit
 loadi(22,35);
 loadi(23,36);
@@ -74,6 +73,19 @@ loadi(13, 26);
 //mod3 
 loadi(46, 59);
 loadi(47, 60);
+//int16
+loadi(34, 47);
+loadi(35, 48);
+//int17
+loadi(36, 49);
+loadi(37, 50);
+//int12
+loadi(26, 39);
+loadi(27, 40);
+//shell
+loadi(67, 9);
+loadi(68, 10);
+
 
 
 //set disk as free
@@ -83,7 +95,7 @@ loadi(47, 60);
 alias page R1;
 page = 0;
 while page <= 127 do
-    if page >= 83 then
+    if page >= 81 then
         [MEMORY_FREE_LIST + page] = 0;
     else 
         [MEMORY_FREE_LIST + page] = 1;
@@ -92,9 +104,11 @@ while page <= 127 do
 endwhile;
 
 //mem_free_count
-[SYSTEM_STATUS_TABLE + 2] = 45;
+[SYSTEM_STATUS_TABLE + 2] = 47;
 //wait_mem_count
 [SYSTEM_STATUS_TABLE + 3] = 0;
+
+//init process initliazation
 // Page table for init
 PTBR = PAGE_TABLE_BASE+20;
 PTLR = 10;
@@ -106,29 +120,29 @@ PTLR = 10;
 [PTBR+3] = "0100";
 
 //Heap
-[PTBR+4] = 78;
-[PTBR+5] = "0110";
-[PTBR+6] = 79;
-[PTBR+7] = "0110";
+[PTBR+4] = -1;
+[PTBR+5] = "0000";
+[PTBR+6] = -1;
+[PTBR+7] = "0000";
 
 //Code
 [PTBR+8] = 65;
 [PTBR+9] = "0100";
-[PTBR+10] = 66;
-[PTBR+11] = "0100";
+[PTBR+10] = -1;
+[PTBR+11] = "0000";
 [PTBR+12] = -1;
 [PTBR+13] = "0000";
 [PTBR+14] = -1;
 [PTBR+15] = "0000";
 
 //Stack
-[PTBR+16] = 76;
+[PTBR+16] = 66;
 [PTBR+17] = "0110";
-[PTBR+18] = 77;
-[PTBR+19] = "0110";
+[PTBR+18] = -1;
+[PTBR+19] = "0000";
 
 //Process table entry for init
-[PROCESS_TABLE + 16 + 11] = 80;
+[PROCESS_TABLE + 16 + 11] = 77;
 [PROCESS_TABLE + 16 + 1] = 1;
 [PROCESS_TABLE + 16 + 4] = CREATED;
 [PROCESS_TABLE + 16 + 13] = 512*8;
@@ -136,16 +150,6 @@ PTLR = 10;
 [PROCESS_TABLE + 16 + 14] = PAGE_TABLE_BASE + 20;
 [PROCESS_TABLE + 16 + 15] = 10;
 
-
-//initalize disk map table
-[DISK_MAP_TABLE + 10 + 2] = -1;
-[DISK_MAP_TABLE + 10 + 3] = -1;
-[DISK_MAP_TABLE + 10 + 4] = 7;
-[DISK_MAP_TABLE + 10 + 5] = 8;
-[DISK_MAP_TABLE + 10 + 6] = -1;
-[DISK_MAP_TABLE + 10 + 7] = -1;
-[DISK_MAP_TABLE + 10 + 8] = -1;
-[DISK_MAP_TABLE + 10 + 9] = -1;
 //initalize resource table of init process
 alias rc_table_entry R5;
 rc_table_entry = 0;
@@ -157,8 +161,58 @@ endwhile;
 
 
 //entry point for init
-[76*512] = [65 * 512 + 1];
+[66*512] = [65 * 512 + 1];
 
+//shell process initliazation
+// Page table for init
+PTBR = PAGE_TABLE_BASE+40;
+PTLR = 10;
+
+//Library
+[PTBR+0] = 63;
+[PTBR+1] = "0100";
+[PTBR+2] = 64;
+[PTBR+3] = "0100";
+
+//Heap
+[PTBR+4] = -1;
+[PTBR+5] = "0000";
+[PTBR+6] = -1;
+[PTBR+7] = "0000";
+
+//Code
+[PTBR+8] = 67;
+[PTBR+9] = "0100";
+[PTBR+10] = 68;
+[PTBR+11] = "0100";
+[PTBR+12] = -1;
+[PTBR+13] = "0000";
+[PTBR+14] = -1;
+[PTBR+15] = "0000";
+
+//Stack
+[PTBR+16] = 78;
+[PTBR+17] = "0110";
+[PTBR+18] = 79;
+[PTBR+19] = "0110";
+
+//Process table entry for shell
+[PROCESS_TABLE + 2*16 + 11] = 80;
+[PROCESS_TABLE + 2*16 + 1] = 2;
+[PROCESS_TABLE + 2*16 + 2] = 1;
+[PROCESS_TABLE + 2*16 + 4] = TERMINATED;
+[PROCESS_TABLE + 2*16 + 13] = 512*8;
+[PROCESS_TABLE + 2*16 + 12] = 0;
+[PROCESS_TABLE + 2*16 + 14] = PAGE_TABLE_BASE + 40;
+[PROCESS_TABLE + 2*16 + 15] = 10;
+
+
+//initalize disk map table
+[DISK_MAP_TABLE + 20 + 4] = 9;
+[DISK_MAP_TABLE + 20 + 5] = 10;
+
+//entry point for shell
+[78*512] = [67 * 512 + 1];
 //change process status of all other process to TERMINATED
 alias state_field R0;
 state_field = PROCESS_TABLE + 32 + 4;
@@ -166,6 +220,9 @@ while (state_field <= 28927) do
     [state_field] = TERMINATED;
     state_field = state_field + 16;
 endwhile;
+
+PTBR = PAGE_TABLE_BASE+20;
+PTLR = 10;
 
 alias sem_table R2;
 sem_table = 0;

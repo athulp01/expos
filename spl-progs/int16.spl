@@ -1,0 +1,187 @@
+alias userSP R0;
+alias process_table R1;
+userSP = SP;
+process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
+//switch to kernel stack
+[process_table + 13] = userSP;
+SP = [process_table + 11]*512 - 1;
+
+alias call_num R2;
+call_num = [[PTBR + 2*(userSP - 5)/512]*512 + (userSP-5)%512];
+
+alias retcode R9;
+retcode = 0;
+
+
+//new user
+if call_num == 22 then
+    [process_table +9] = 22;
+    alias username R3;
+    username = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+    alias password R4;
+    password = [[PTBR + 2*(userSP - 3)/512]*512 + (userSP-3)%512];
+
+    //if not root or shell
+    if [SYSTEM_STATUS_TABLE] != 1 || [SYSTEM_STATUS_TABLE + 1] != 2 then
+        retcode = -2;
+        call ret;
+    endif;
+
+    alias userid R5;
+    userid = 0;
+    while userid < MAX_USER_NUM do
+        //if already used
+        if [USER_TABLE + 2*userid] == username then
+            retcode = -1;
+            call ret;
+        endif;
+        if [USER_TABLE + 2*userid] == -1 || [USER_TABLE + 2*userid + 1] == -1 then
+            break;
+        endif;
+        userid = userid + 1;
+    endwhile;
+
+    if userid == MAX_USER_NUM then
+        retcode = -3;
+        call ret;
+    endif;
+
+    encrypt password;
+
+    [USER_TABLE + 2*userid] = username;
+    [USER_TABLE + 2*userid + 1] = password;
+    breakpoint;
+endif;
+    
+
+//remuser
+if call_num == 23 then
+    [process_table +9] = 22;
+    alias username R3;
+    username = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+
+    //if not shell or root
+    if [SYSTEM_STATUS_TABLE] != 1 || [SYSTEM_STATUS_TABLE + 1] != 2 then
+        retcode = -2;
+        call ret;
+    endif;
+
+    if username == "root" || username == "kernel" then 
+        retcode = -2;
+        call ret;
+    endif;
+
+    alias userid R4;
+    userid = 0;
+    while userid < MAX_USER_NUM do
+        if [USER_TABLE + 2*userid] == username then
+            break;
+        endif;
+        userid = userid + 1;
+    endwhile;
+
+    if userid == MAX_USER_NUM then
+        retcode = -1;
+        call ret;
+    endif;
+
+    //check if any files exists for user
+    alias file R5;
+    file = 0;
+    while file < MAX_FILE_NUM do
+        if [ROOT_FILE + 8*file + 3] == username && [ROOT_FILE + 8*file] != -1 then
+            retcode = -3;
+            call ret;
+        endif;
+        file = file + 1;
+    endwhile;
+
+    //invalidate
+    [USER_TABLE + 2*userid] = -1;
+    [USER_TABLE + 2*userid] = -1;
+endif;
+
+//change password
+if call_num == 24 then
+    [process_table +9] = 24;
+    alias username R3;
+    username = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+    alias password R4;
+    password = [[PTBR + 2*(userSP - 3)/512]*512 + (userSP-3)%512];
+    //if not shell 
+    if [SYSTEM_STATUS_TABLE + 1] != 2 then
+        retcode = -2;
+        call ret;
+    endif;
+
+    alias userid R5;
+    userid = 0;
+    while userid < MAX_USER_NUM do
+        if [USER_TABLE + 2*userid] == username then
+            break;
+        endif;
+        userid = userid + 1;
+    endwhile;
+
+    if userid == MAX_USER_NUM then
+        retcode = -2;
+        call ret;
+    endif;
+
+    if userid != [process_table + 3] && [SYSTEM_STATUS_TABLE] != 1 then
+        retcode = -1;
+        call ret;
+    endif;
+
+    encrypt password;
+    [USER_TABLE + 2*userid + 1] = password;
+endif;
+
+//getuname
+if call_num == 25 then
+    [process_table +9] = 25;
+    alias id R3;
+    id = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+
+    if id < 0 || id > 15 then
+        retcode = -1;
+        call ret;
+    endif;
+
+    //if not valid
+    if [USER_TABLE + 2*id] == -1 then
+        retcode = -1;
+        call ret;
+    endif;
+
+    //return username
+    retcode = [USER_TABLE + 2*id];
+    call ret;
+endif;
+
+//getuid
+if call_num == 26 then
+    [process_table +9] = 26;
+    alias username R3;
+    username = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+    //if not shell 
+
+    alias userid R5;
+    userid = 0;
+    while userid < MAX_USER_NUM do
+        if [USER_TABLE + 2*userid] == username then
+            retcode = userid;
+            call ret;
+        endif;
+        userid = userid + 1;
+    endwhile;
+
+    retcode = -1;
+    call ret;
+endif;
+
+ret:
+[[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = retcode;
+[process_table +9] = 0;
+SP = [process_table + 13];
+ireturn;

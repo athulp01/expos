@@ -1,0 +1,27 @@
+int main()
+{
+decl
+    str username, password;
+    int tmp, t;
+enddecl
+
+begin
+    t = 1;
+    tmp = exposcall("Login");
+    while (t == 1) do
+        write("Ent username");
+        tmp = exposcall("Read", -1, username);
+        write("Ent password");
+        tmp = exposcall("Read", -1, password);
+        tmp = exposcall("Login", username, password);
+
+        if (tmp == -1) then
+            write("Invalid");
+        endif;
+        if (tmp == -2) then
+            write("pass wrong");
+        endif;
+    endwhile;
+    return 0;
+end
+}

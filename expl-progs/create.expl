@@ -1,0 +1,13 @@
+int main()
+{
+decl
+    str buffer, filename;
+    int tmp, fd, tmp1;
+enddecl
+
+begin
+    tmp = exposcall("Read", -1, filename);
+    fd = exposcall("Create", filename, 1);
+    return 0;
+end
+}
