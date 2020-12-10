@@ -7,8 +7,8 @@ if func == 1 then
     alias pid R3;
 
     while [BUFFER_TABLE + 4*buffer + 2] != -1 do
-        [SYSTEM_STATUS_TABLE + pid*16 + 4] = WAIT_BUFFER;
-        [SYSTEM_STATUS_TABLE + pid*16 + 5] = buffer;
+        [PROCESS_TABLE + pid*16 + 4] = WAIT_BUFFER;
+        [PROCESS_TABLE + pid*16 + 5] = buffer;
         multipush(R1, R2, R3);
         call SCHEDULER;
         multipop(R1, R2, R3);
@@ -106,12 +106,12 @@ if func == 6 then
     alias semidx R4;
     semidx = 0;
     //Get a free semaphore indicated by process count of 0
-    while(semidx < 32 && [SEMAPHORE_TABLE + 4*semidx +1] != 0) do
+    while(semidx < MAX_SEM_COUNT && [SEMAPHORE_TABLE + 4*semidx +1] != 0) do
         semidx = semidx + 4;
     endwhile;
 
     //If not availble return -1
-    if semidx == 32 then
+    if semidx == MAX_SEM_COUNT then
         R0 = -1;
         return;
     endif;
@@ -130,7 +130,6 @@ if func == 7 then
     alias pid R3;
     //Only release if locked by current process
     if [SEMAPHORE_TABLE + 4*semidx] == pid then
-        print "release";
         [SEMAPHORE_TABLE + 4*semidx] = -1;
         alias ptable R4;
         ptable = 0;

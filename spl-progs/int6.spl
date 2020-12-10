@@ -54,7 +54,7 @@ if fd != -1 then
             retcode = -2;
             call ret;
         endif;
-        [word_addr] = [ROOT_FILE + [OPEN_FILE_TABLE + 4*openfileid + 2]];
+        [[PTBR + 2*(word_addr/512)]*512 + (word_addr%512)] = [ROOT_FILE + [OPEN_FILE_TABLE + 4*openfileid + 2]];
         //increment lseek
         [OPEN_FILE_TABLE + 4*openfileid + 2] = [OPEN_FILE_TABLE + 4*openfileid + 2] + 1;
     else 

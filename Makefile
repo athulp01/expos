@@ -63,4 +63,7 @@ $(X_DIR)/idle.xsm: $(E_DIR)/idle.expl
 	echo "load --idle $@" >> commands_xfs
 
 clean: 
+	echo "fdisk" >> commands_xfs
+	xfs run commands_xfs
+	rm commands_xfs
 	rm $(X_DIR)/*.xsm

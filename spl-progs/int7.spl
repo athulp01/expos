@@ -1,35 +1,102 @@
 //write
 //set the mode flag ot syscall number
-[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 7;
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 5;
 //save the usersp to process table entry
 alias userSp R0;
 userSp = SP;
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 13] = SP;
 
+alias process_table R1;
+process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
 //switch to kernel stack
 SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 + 11]*512 - 1;
 
-alias phyPage R1;
-alias offset R2;
-alias fileDescPhyAddr R3;
 
 //get the write file descriptor from the user stack
-phyPage = [PTBR + 2 * ((userSp - 4)/512)];
-offset = (userSp - 4)%512;
-fileDescPhyAddr = (phyPage * 512) + offset;
-alias fd R4;
-fd = [fileDescPhyAddr];
+alias fd R2;
+fd = [[PTBR + 2 * ((userSp - 4)/512)]*512 + (userSp - 4)%512];
 
-if(fd != -2)
-then
-    // if file descriptor is not -2(not stdout) then set -1 to the return address
-    alias phyAddrRetVal R5;
-    phyAddrRetVal = ([PTBR + 2 * ((userSp - 1) / 512)] * 512) + ((userSp - 1) % 512);
-    [phyAddrRetVal] = -1;
-else
+alias word R3;
+word = [[PTBR + 2 * ((userSp - 3) / 512)] * 512 + ((userSp - 3) % 512)];
+
+alias retcode R9;
+alias inode R4;
+
+if(fd != -2) then
+    if fd < 0 || fd > 7 || [[process_table + 11]*512 + RESOURCE_TABLE_OFFSET+ 2*fd] != FILE then
+        retcode = -1;
+        call ret;
+    endif;
+
+    alias openfileid R5;
+    openfileid = [[process_table + 11]*512 + RESOURCE_TABLE_OFFSET+ 2*fd + 1];
+    inode = [OPEN_FILE_TABLE + 4*openfileid];
+
+    //check permision
+    if  [process_table + 3]!= ROOT && [process_table + 3] != [INODE_TABLE + 16*inode + 2] then
+        retcode = -3;
+        call ret;
+    endif;
+
+    //Acquire inode
+    multipush(R0, R1, R2, R3, R4, R5, R6);
+    R1 = 4;
+    R2 = inode;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;
+
+    if R0 == -1 then
+        retcode = -1;
+        call ret;
+    endif;
+    multipop(R0, R1, R2, R3, R4, R5, R6);
+
+    alias lseek R6;
+    lseek = [OPEN_FILE_TABLE + 4*openfileid + 2];
+
+    if lseek == MAX_FILE_SIZE then
+        call release;
+        retcode = -2;
+        call ret;
+    endif;
+    
+    //if current block is filled
+    if lseek % 512 == 0 && lseek == [INODE_TABLE + 16*inode + 2] then
+        alias block R7;
+        //get free disk block
+        multipush(R0, R1, R2, R3, R4, R5, R6);
+        R1 = 3;
+        call MEMORY_MANAGER;
+        block = R0;
+        multipop(R0, R1, R2, R3, R4, R5, R6);
+
+        if block == -1 then
+            retcode = -2;
+            call ret;
+        endif;
+
+        [INODE_TABLE + 16*inode + 8 + lseek/512] = block;
+    endif;
+
+    //call buffered write
+    multipush(R0, R1, R2, R3, R4, R5, R6);
+    R1 = 1;
+    R2 = [INODE_TABLE + 16*inode + 8 + lseek/512];
+    R4 = word;
+    R3 = lseek % 512;
+    call FILE_MANAGER;
+    multipop(R0, R1, R2, R3, R4, R5, R6);
+
+    lseek = [OPEN_FILE_TABLE + 4*openfileid + 2];
+    //if lseek equals filw size update inode and rootfile
+    if lseek == [INODE_TABLE + 16*inode + 2] then
+        [INODE_TABLE + 16*inode + 2] = [INODE_TABLE + 16*inode + 2] + 1;
+        [ROOT_FILE + 8*inode + 1] = [ROOT_FILE + 8*inode + 1] + 1;
+    endif;
+    [OPEN_FILE_TABLE + 4*openfileid + 2] = [OPEN_FILE_TABLE + 4*openfileid + 2] + 1;
+    call release;
+  else
     // get the output word
-    alias word R5;
-    word = [[PTBR + 2 * ((userSp - 3) / 512)] * 512 + ((userSp - 3) % 512)];
     //print it to stdout
     multipush(R0, R1, R2, R3, R4, R5);
     //function number of terminalwrite
@@ -39,13 +106,22 @@ else
     R3 = word;
     call MOD_4;
     multipop(R0, R1, R2, R3, R4, R5);
-    //set return value to 0
-    alias physicalAddrRetVal R6;
-    physicalAddrRetVal = ([PTBR + 2 * (userSp - 1)/ 512] * 512) + ((userSp - 1) % 512);
-    [physicalAddrRetVal] = 0;
-    //switch to user stack and reset the mode flag
 endif;
 
-SP = userSp;
-[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
-ireturn;
+retcode = 0;
+call ret;
+
+release:
+    multipush(R0, R1, R2, R3, R4, R5, R6, R7);
+    R1 = 5;
+    R2 = inode;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;
+    multipop(R0, R1, R2, R3, R4, R5, R6, R7);
+    return;
+ret:
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+    [[PTBR + 2*(userSp - 1)/512]*512 + (userSp-1)%512] = retcode;
+    [process_table +9] = 0;
+    SP = [process_table + 13];
+    ireturn;

@@ -48,6 +48,23 @@ if func == 2 then
     return;
 endif;
 
+//get free block
+if func == 3 then
+    alias block R2;
+    block = DISK_FREE_AREA;
+
+    while block != DISK_SWAP_AREA do
+        if [DISK_FREE_LIST + block] == 0 then
+            [DISK_FREE_LIST + block] = 1;
+            R0 = block;
+            return;
+        endif;
+        block = block + 1;
+    endwhile;
+    R0 = -1;
+    return;
+endif;
+
 //release block
 if func == 4 then
     alias block_num R2;

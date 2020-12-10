@@ -98,6 +98,7 @@ if call_num == 4 then
     R3 = [SYSTEM_STATUS_TABLE + 1];
     call RESOURCE_MANAGER;
     multipop(R0, R1, R2, R3, R4);
+    breakpoint;
 
     //If file is already deleted
     if [FILE_STATUS_TABLE + 4*fileidx + 1] != -1 then
@@ -120,19 +121,19 @@ if call_num == 4 then
         if [INODE_TABLE + 16*fileidx + 8 + block] != -1 then
             R6 = 0;
             while R6 < MAX_BUFFER do
-                if [BUFFER_TABLE + 4*R6] ==[INODE_TABLE + 16*fileidx + 8 + block] then
-                    [BUFFER_TABLE + 4*R6] = 0;
+                if [BUFFER_TABLE + 4*R6] == [INODE_TABLE + 16*fileidx + 8 + block] && [BUFFER_TABLE +4*R6 + 1] == 1 then
+                    [BUFFER_TABLE + 4*R6 + 1] = 0;
                 endif;
                 R6 = R6 + 1;
             endwhile;
+            //release the block
+            multipush(R0, R1, R2, R3, R4);
+            R1 = 4;
+            R2 = [INODE_TABLE + 16*fileidx + 8 + block];
+            R3 = [SYSTEM_STATUS_TABLE + 1];
+            call MEMORY_MANAGER;
+            multipop(R0, R1, R2, R3, R4);
         endif;
-        //release the block
-        multipush(R0, R1, R2, R3, R4);
-        R1 = 4;
-        R2 = [INODE_TABLE + 16*fileidx + 8 + block];
-        R3 = [SYSTEM_STATUS_TABLE + 1];
-        call MEMORY_MANAGER;
-        multipop(R0, R1, R2, R3, R4);
         block = block + 1;
     endwhile;
 

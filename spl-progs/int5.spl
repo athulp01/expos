@@ -1,0 +1,185 @@
+alias userSP R0;
+alias process_table R1;
+userSP = SP;
+process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
+//switch to kernel stack
+[process_table + 13] = userSP;
+SP = [process_table + 11]*512 - 1;
+
+alias call_num R3;
+call_num = [[PTBR + 2*(userSP - 5)/512]*512 + (userSP-5)%512];
+
+alias retcode R9;
+retcode = 0;
+
+alias inode R7;
+
+alias rc_base R4;
+rc_base =[process_table + 11]*512 + RESOURCE_TABLE_OFFSET;
+
+//seek
+if call_num == 6 then
+    [process_table +9] = 6;
+    alias fd R2;
+    fd = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+    alias offset R8;
+    offset = [[PTBR + 2*(userSP - 3)/512]*512 + (userSP-3)%512];
+
+    if fd < 0 || fd > 7 || [rc_base + 2*fd] != FILE then
+        retcode = -1;
+        call ret;
+    endif;
+
+    alias openfileid R5;
+    openfileid = [[process_table + 11]*512 + RESOURCE_TABLE_OFFSET+ 2*fd + 1];
+    inode = [OPEN_FILE_TABLE + 4*openfileid];
+
+    //check permision
+    if inode == -1 then 
+        retcode = -1;
+        call ret;
+    endif;
+
+    //Acquire inode
+    multipush(R0, R1, R2, R3, R4, R5, R6, R7, R8);
+    R1 = 4;
+    R2 = inode;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;
+
+    if R0 == -1 then
+        retcode = -1;
+        call ret;
+    endif;
+    multipop(R0, R1, R2, R3, R4, R5, R6, R7, R8);
+
+    alias lseek R6;
+    lseek = [OPEN_FILE_TABLE + 4*openfileid + 2];
+
+    if inode == INODE_ROOT && lseek + offset == 480 then
+        call release;
+        retcode = -2;
+        call ret;
+    endif;
+
+    if inode != INODE_ROOT && lseek + offset < 0 then 
+        call release;
+        retcode = -2;
+        call ret;
+    endif;
+
+    if offset == 0 then
+        [OPEN_FILE_TABLE + 4*openfileid + 2] = 0;
+    else 
+        if lseek + offset > [INODE_TABLE + 16*inode +2] then
+            [OPEN_FILE_TABLE + 4*openfileid + 2] = [INODE_TABLE + 16*inode +2];
+        else 
+            [OPEN_FILE_TABLE + 4*openfileid + 2] = lseek + offset;
+        endif;
+    endif;
+
+    call release;
+    retcode = 0;
+    call ret;
+endif;
+    
+
+//open
+if call_num == 2 then
+    [process_table +9] = 2;
+    alias filename R2;
+    filename = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+    [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 2;
+    alias free_rc R3;
+    free_rc = 0;
+    //get a free resource table entry
+    while (free_rc < 16) do
+        if [rc_base + free_rc] == -1 then
+            break;
+        endif;
+        free_rc = free_rc + 2;
+    endwhile;
+
+    //if not found return -1
+    if(free_rc == 16) then
+        retcode = -3;
+        call ret;
+    endif;
+
+    //Open from file manager
+    multipush(R0, R1, R2, R3, R4);
+    R1 = 3;
+    R2 = filename;
+    call FILE_MANAGER;
+    R5 = R0;
+    multipop(R0, R1, R2, R3, R4);
+    //if error
+    if R5 == -1 || R5 == -2 then
+        retcode = R5;
+        call ret;
+    endif;
+
+    //set rc table
+    [rc_base + free_rc] = FILE;
+    [rc_base + free_rc + 1] = R5;
+    //ret index of rc table which is the file descriptor
+    retcode = free_rc/2;
+    call ret; 
+endif;
+
+//Close
+if call_num == 3 then
+    [process_table +9] = 3;
+    [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 3;
+
+    alias fileid R3;
+    fileid = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
+
+    //get the corresponding rc table entry
+    alias rc R5;
+    rc = 0;
+    while (rc < 16) do
+        if [rc_base + rc] == FILE && [rc_base + rc + 1] == fileid then
+            break;
+        endif;
+        rc = rc + 2;
+    endwhile;
+
+    //check validity of fileid
+    if rc == 16 || fileid <0 || fileid > 7 then
+        [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
+        [process_table +9] = 0;
+        SP = [process_table + 13];
+        ireturn;
+    endif;
+
+    //open file table index
+    alias openfile R6;
+    openfile = [rc_base + rc + 1];
+
+    //Close from filemanager
+    multipush(R0, R1, R2, R3, R4, R5);
+    R1 = 4;
+    R2 = openfile;
+    call FILE_MANAGER;
+    multipop(R0, R1, R2, R3, R4, R5);
+
+    [rc_base + rc] = -1;
+    [rc_base + rc + 1] = -1;
+    retcode = 0;
+    call ret;
+endif;
+
+release:
+    multipush(R0, R1, R2, R3, R4, R5, R6, R7);
+    R1 = 5;
+    R2 = inode;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;
+    multipop(R0, R1, R2, R3, R4, R5, R6, R7);
+    return;
+ret:
+[[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = retcode;
+[process_table +9] = 0;
+SP = [process_table + 13];
+ireturn;

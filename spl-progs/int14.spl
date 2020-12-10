@@ -31,7 +31,7 @@ if call_num == 19 then
     endwhile;
 
     //if semphonre is not valid then exit
-    if rc == 16 || semid <0 || semid > 31 then
+    if rc == 16 || semid <0 || semid > 7 then
         [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
         [process_table +9] = 0;
         SP = [process_table + 13];

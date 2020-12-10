@@ -1,0 +1,167 @@
+//file manager
+alias func R1;
+
+
+//buffered read and write
+if func == 2 || func == 1 then
+    alias block R2;
+    alias offset R3;
+    alias addr R4;
+    alias buff R5;
+    buff = block%4;
+
+    //lock buffer
+    multipush(R1, R2, R3, R4, R5);
+    R1 = 1;
+    R2 = buff;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;
+    multipop(R1, R2, R3, R4, R5);
+
+    // if buffer was occupied earlier
+    if [BUFFER_TABLE + 4*buff] != block then
+        //if dirty then write back
+        if [BUFFER_TABLE + 4*buff + 1] == 1 then
+            multipush(R1, R2, R3, R4, R5);
+            R1 = 1;
+            R3 = BUFFER_BASE + buff;
+            R4 = [BUFFER_TABLE + 4*buff];
+            R2 = [SYSTEM_STATUS_TABLE + 1];
+            call DEVICE_MANAGER;
+            multipop(R1, R2, R3, R4, R5);
+            [BUFFER_TABLE + 4*buff + 1] = 0;
+        endif;
+        //load the block to page
+        multipush(R1, R2, R3, R4, R5);
+        R1 = 2;
+        R3 = BUFFER_BASE + buff;
+        R4 = block; 
+        R2 = [SYSTEM_STATUS_TABLE + 1];
+        call DEVICE_MANAGER;
+        multipop(R1, R2, R3, R4, R5);
+
+        //set block number in table 
+        [BUFFER_TABLE + 4*buff] = block;
+    endif;
+
+    //read the data
+    if func == 2 then
+        [[PTBR + 2*(addr/512)]*512 + (addr%512)] = [BUFFER + 512*buff + offset];
+    endif;
+    if func == 1 then
+        [BUFFER + 512*buff + offset] = addr;
+    endif;
+
+    [BUFFER_TABLE + 4*buff + 1] = 1;
+
+    //unlock the buffer
+    multipush(R1, R2, R3, R4, R5);
+    R1 = 2;
+    R2 = buff;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;
+    multipop(R1, R2, R3, R4, R5);
+    return;
+endif;
+
+
+//open
+if func == 3 then
+    alias filename R2;
+    alias inode R3;
+    //find corresponding inode
+    inode = 0;
+    while inode < MAX_FILE_NUM do
+        if [INODE_TABLE + inode*16 + 1] == filename then
+            break;
+        endif;
+        inode = inode + 1;
+    endwhile;
+
+    //find a free openfile entry
+    alias openfileid R4;
+    openfileid = 0;
+    while openfileid < MAX_OPENFILE_NUM do 
+        if [OPEN_FILE_TABLE + 4*openfileid] == -1 then
+            break;
+        endif;
+        openfileid = openfileid + 1;
+    endwhile;
+
+    if openfileid == MAX_OPENFILE_NUM then
+        R0 = -2;
+        return;
+    endif;
+    if inode == MAX_FILE_NUM || [INODE_TABLE + inode*16] == EXEC then
+        R0 = -1;
+        return;
+    endif;
+
+    //Lock inode
+    multipush(R1, R2, R3, R4);
+    R1 = 4;
+    R2 = inode;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;
+    multipop(R1, R2, R3, R4);
+
+    if R0 == -1 then
+        return;
+    endif;
+
+    //set inode number
+    if filename == "root" then
+        [OPEN_FILE_TABLE + 4*openfileid] = INODE_ROOT;
+    else
+        //increment open file count
+        if [FILE_STATUS_TABLE + 4*inode + 1] == -1 then
+            [FILE_STATUS_TABLE + 4*inode + 1] = 1;
+        else
+            [FILE_STATUS_TABLE + 4*inode + 1] = [FILE_STATUS_TABLE + 4*inode + 1] + 1;
+        endif;
+        [OPEN_FILE_TABLE + 4*openfileid] = inode;
+    endif;
+
+    //open instance
+    [OPEN_FILE_TABLE + 4*openfileid + 1] = 1;
+    //lseek
+    [OPEN_FILE_TABLE + 4*openfileid + 2] = 0;
+    //unLock inode
+    multipush(R1, R2, R3, R4);
+    R1 = 5;
+    R2 = inode;
+    R3 = [SYSTEM_STATUS_TABLE + 1];
+    call RESOURCE_MANAGER;
+    multipop(R1, R2, R3, R4);
+
+    R0 = openfileid;
+    return;
+endif;
+
+//close
+if func == 4 then
+    alias filetableindex R2;
+    alias inode R3;
+    inode = [OPEN_FILE_TABLE + 4*filetableindex];
+
+    //decrement open instance cound
+    [OPEN_FILE_TABLE +4*filetableindex + 1] =[OPEN_FILE_TABLE +4*filetableindex + 1] -1;
+
+    //if last instance
+    if [OPEN_FILE_TABLE +4*filetableindex + 1] == 0 then
+        //invalidate entry
+        [OPEN_FILE_TABLE +4*filetableindex + 0] = -1;
+        [OPEN_FILE_TABLE +4*filetableindex + 1] = -1;
+        [OPEN_FILE_TABLE +4*filetableindex + 2] = -1;
+
+        //if not roor decrement open count
+        if inode != INODE_ROOT then
+            [FILE_STATUS_TABLE + 4*inode + 1] = [FILE_STATUS_TABLE + 4*inode + 1] - 1;
+        endif;
+        // if last open then invalidate
+        if [FILE_STATUS_TABLE + 4*inode + 1] == 0 then
+            [FILE_STATUS_TABLE + 4*inode + 1] = -1;
+        endif;
+    endif;
+    return;
+endif;
