@@ -102,6 +102,7 @@ if call_num == 2 then
 
     //if not found return -1
     if(free_rc == 16) then
+    print "error";
         retcode = -3;
         call ret;
     endif;
@@ -115,6 +116,7 @@ if call_num == 2 then
     multipop(R0, R1, R2, R3, R4);
     //if error
     if R5 == -1 || R5 == -2 then
+        print "openerrot";
         retcode = R5;
         call ret;
     endif;
@@ -124,6 +126,9 @@ if call_num == 2 then
     [rc_base + free_rc + 1] = R5;
     //ret index of rc table which is the file descriptor
     retcode = free_rc/2;
+    if retcode == -1 then
+        print "err";
+    endif;
     call ret; 
 endif;
 

@@ -1,5 +1,5 @@
 //Exit syscall
-[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1] + 9] = 10;
+[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1] + 9] = INT_EXIT;
 
 alias userSP R0;
 alias process_table R1;

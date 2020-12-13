@@ -20,7 +20,7 @@ retcode = 0;
 
 //Create
 if call_num == 1 then
-    [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 1;
+    [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = INT_CREATE;
     alias fileidx R4;
     alias freeidx R5;
     freeidx = -1;
@@ -98,7 +98,6 @@ if call_num == 4 then
     R3 = [SYSTEM_STATUS_TABLE + 1];
     call RESOURCE_MANAGER;
     multipop(R0, R1, R2, R3, R4);
-    breakpoint;
 
     //If file is already deleted
     if [FILE_STATUS_TABLE + 4*fileidx + 1] != -1 then

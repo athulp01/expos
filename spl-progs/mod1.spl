@@ -156,11 +156,12 @@ if func == 5 then
     endwhile;
 
     alias pidx R4;
-    pidx = 2;
+    pidx = 3;
 
-    while pidx < MAX_PROC_NUM do
+    while pidx < MAX_PROC_NUM-1 do
     //call exit process
         if pidx != pid && [PROCESS_TABLE +16*pidx + 4] != TERMINATED then
+            //call exit process
             multipush(R0, R1, R2, R3);
             R1 = 3;
             R2 = pidx;

@@ -5,6 +5,49 @@ SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11] * 512 - 1;
 //push user registers
 backup;
 
+//If swapping is initiated
+if [SYSTEM_STATUS_TABLE + 5] != 0 then
+    //current process is swaper daemon
+    if [SYSTEM_STATUS_TABLE + 1] == 15 then
+        if [SYSTEM_STATUS_TABLE + 5] == SWAP_OUT then
+            R1 = SWAP_OUT;
+            R2 = [SYSTEM_STATUS_TABLE + 1];
+            call PAGER_MODULE;
+        endif;
+        //Swap_in
+        if [SYSTEM_STATUS_TABLE + 5] == SWAP_IN then
+            R1 = SWAP_IN;
+            R2 = [SYSTEM_STATUS_TABLE + 1];
+            call PAGER_MODULE;
+        endif;
+    endif;
+//Swapping is not initiated check if it needs to be initiated
+else
+    if [SYSTEM_STATUS_TABLE + 2] < MEM_LOW then
+        print "set swapout";
+        [SYSTEM_STATUS_TABLE + 5] = SWAP_OUT;
+    //There are swapped out process
+    else 
+        if [SYSTEM_STATUS_TABLE + 4] != 0 then
+            if [SYSTEM_STATUS_TABLE + 2] > MEM_HIGH then
+                print "set swapin";
+                [SYSTEM_STATUS_TABLE + 5] = SWAP_IN;
+            else
+                alias pid R1;
+                pid = 3;
+                while pid < MAX_PROC_NUM - 1 do 
+                    if [PROCESS_TABLE + 16*pid + 6] == 1 && [PROCESS_TABLE + 16*pid] > MAX_TICK then
+                        print "set swapin";
+                        [SYSTEM_STATUS_TABLE + 5] = SWAP_IN;
+                        break;
+                    endif;
+                    pid = pid + 1;
+                endwhile;
+            endif;
+        endif;
+    endif;
+endif;
+
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 4] = READY;
 
 //increase tick of all non terminated process

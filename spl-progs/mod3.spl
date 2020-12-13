@@ -89,10 +89,12 @@ if func == 3 then
     endwhile;
 
     if openfileid == MAX_OPENFILE_NUM then
+        print "maxopne";
         R0 = -2;
         return;
     endif;
     if inode == MAX_FILE_NUM || [INODE_TABLE + inode*16] == EXEC then
+        print "isexec";
         R0 = -1;
         return;
     endif;
@@ -106,6 +108,7 @@ if func == 3 then
     multipop(R1, R2, R3, R4);
 
     if R0 == -1 then
+        print "lockerrot";
         return;
     endif;
 
@@ -135,6 +138,9 @@ if func == 3 then
     multipop(R1, R2, R3, R4);
 
     R0 = openfileid;
+    if R0 == -1 then
+        print "fileiderror";
+    endif;
     return;
 endif;
 

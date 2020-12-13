@@ -7,7 +7,7 @@ process_table = PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE + 1];
 [process_table + 13] = userSP;
 SP = [process_table + 11]*512 - 1;
 
-[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 21;
+[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = INT_SHUTDOWN;
 
 if [SYSTEM_STATUS_TABLE + 1] != 2 && [process_table + 3] != 1 then
     [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
@@ -20,7 +20,6 @@ endif;
 multipush(R0, R1, R2);
 R1 = 5;
 R2 = [SYSTEM_STATUS_TABLE + 1];
-breakpoint;
 call PROCESS_MANAGER;
 multipop(R0, R1, R2);
 

@@ -61,6 +61,10 @@ if func == 4 then
     alias pid R3;
     //busy wait until inode is free
     while [FILE_STATUS_TABLE + 4*inode] != -1 do
+        if inode == -1 then
+            print "inode error";
+            breakpoint;
+        endif;
         [PROCESS_TABLE + 16*pid + 4] = WAIT_FILE;
         [PROCESS_TABLE + 16*pid + 5] = inode;
         multipush(R1, R2, R3);

@@ -1,5 +1,5 @@
 //fork syscall
-[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 8;
+[PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = INT_FORK;
 
 alias userSP R0;
 alias process_table R1;

@@ -14,24 +14,33 @@ process_table = PROCESS_TABLE + 16*curPID;
 [process_table + 15] = PTLR;
 
 alias newPID R2;
+newPID = curPID + 1;
 alias next_process_table R3;
-next_process_table = process_table + 16;
 
-//get next process to schedule , 28927 is the end of process_table memory location
-//TODO: make it circular
-while([next_process_table + 4] != READY && [next_process_table + 4] != CREATED) do
-    next_process_table = next_process_table + 16;
-    if(next_process_table >= 28927) then
-        break;
+if [SYSTEM_STATUS_TABLE + 5] != 0 then
+    //if swapper is in blocked state schedule idle process
+    if [PROCESS_TABLE + 15*16 + 4] > TERMINATED && [PROCESS_TABLE + 15*16 + 4] < ALLOCATED then
+        newPID = 0;
+    else
+    //else swapper daemon will be scheduled
+        newPID = 15;
     endif;
-endwhile;
-//if there is no process to schedule, then schedule idle process
-newPID = [next_process_table + 1];
-if(next_process_table >= 28928) then
-    newPID = 0;
-    next_process_table = PROCESS_TABLE;
+else 
+    //get next process to schedule , 28927 is the end of process_table memory location
+    while newPID < MAX_PROC_NUM do 
+        if [PROCESS_TABLE + 16*newPID + 6] != 1 && ([PROCESS_TABLE + 16*newPID + 4] == READY || [PROCESS_TABLE + 16*newPID + 4] == CREATED) then
+            break;
+        endif;
+        newPID = newPID + 1;
+    endwhile;
+    //if there is no process to schedule, then schedule idle process
+    if newPID == MAX_PROC_NUM then
+        newPID = 0;
+    endif;
 endif;
 
+
+next_process_table = PROCESS_TABLE + 16*newPID;
 //restore the registers from new process
 SP = [next_process_table + 11]*512 + [next_process_table + 12];
 PTBR = [next_process_table + 14];

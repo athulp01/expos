@@ -50,7 +50,6 @@ if call_num == 22 then
 
     [USER_TABLE + 2*userid] = username;
     [USER_TABLE + 2*userid + 1] = password;
-    breakpoint;
 endif;
     
 

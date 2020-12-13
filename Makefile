@@ -13,6 +13,7 @@ MOD_XSM = $(MOD_SPL:$(S_DIR)/%.spl=$(X_DIR)/%.xsm)
 all: xfs
 
 xfs: xsm
+	echo "load --library ./bin/library.lib" >> commands_xfs
 	xfs run commands_xfs
 	rm commands_xfs
 
@@ -24,7 +25,7 @@ modules: $(MOD_XSM)
 
 user: $(X_DIR)/shell.xsm 
 
-os: $(X_DIR)/os.xsm $(X_DIR)/idle.xsm
+os: $(X_DIR)/os.xsm $(X_DIR)/idle.xsm $(X_DIR)/login.xsm
 
 $(X_DIR)/int%.xsm: $(S_DIR)/int%.spl
 	spl $<
@@ -39,6 +40,10 @@ $(X_DIR)/os.xsm: $(S_DIR)/os.spl
 	echo "load --os $@" >> commands_xfs
 
 $(X_DIR)/shell.xsm: $(E_DIR)/shell.expl
+	expl $<
+	echo "load --shell $@" >> commands_xfs
+
+$(X_DIR)/login.xsm: $(E_DIR)/login.expl
 	expl $<
 	echo "load --init $@" >> commands_xfs
 

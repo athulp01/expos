@@ -7,6 +7,7 @@ if func == 1 then
     //increment the wait_mem_count and go to busy loop
     [SYSTEM_STATUS_TABLE + 3] = [SYSTEM_STATUS_TABLE + 3] + 1;
     while [SYSTEM_STATUS_TABLE + 2] == 0 do
+        print "no memory";
         [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 4] = WAIT_MEM;
         call SCHEDULER;
     endwhile;
@@ -119,4 +120,20 @@ if func == 5 then
     //return loaded page number
     R0 = page_num;
     return;
+endif;
+
+if func == 6 then
+	alias disk R3;
+	disk = DISK_SWAP_AREA;
+	while(disk < DISK_SIZE) do
+		if([DISK_FREE_LIST + disk] == 0) then
+			[DISK_FREE_LIST + disk] = 1;
+			R0 = disk;
+			return;
+		endif;
+		disk = disk + 1;
+	endwhile;
+	
+	R0 = -1;
+	return;
 endif;
