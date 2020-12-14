@@ -1,0 +1,199 @@
+//pager
+alias func R1;
+alias pid R2;
+
+//Dswap out
+if func == SWAP_OUT then
+    print "swapoutstarted";
+    alias swappid R3;
+    swappid = 3;
+    alias ptable R4;
+    ptable = PROCESS_TABLE + 16*swappid;
+
+    //find process in wait_Process state
+    while swappid < MAX_PROC_NUM   do
+        if  [ptable + 4] == WAIT_PROCESS && [ptable + 6] == 0 then 
+            break;
+        endif;
+        swappid = swappid + 1;
+        ptable = PROCESS_TABLE + 16*swappid;
+    endwhile;
+
+    if swappid == MAX_PROC_NUM then 
+        //find process in wait_Process state
+        swappid = 3;
+        ptable = PROCESS_TABLE + 16*swappid;
+        while swappid < MAX_PROC_NUM   do
+            if [ptable + 4] == WAIT_SEMAPHORE && [ptable + 6] == 0 then
+                break;
+            endif;
+            swappid = swappid + 1;
+            ptable = PROCESS_TABLE + 16*swappid;
+        endwhile;
+    endif;
+
+    if swappid == MAX_PROC_NUM then
+        alias id R5;
+        id = 3;
+        ptable = PROCESS_TABLE + 16*id;
+        alias max R6;
+        max = 0;
+        while id < MAX_PROC_NUM - 1 do
+            if [ptable + 4] != RUNNING && [ptable + 4] != TERMINATED && [ptable +4] != ALLOCATED && [ptable + 6] != 1 then
+                if [ptable] > max then
+                    max = [ptable];
+                    swappid = id;
+                endif;
+            endif;
+            id = id + 1;
+            ptable = PROCESS_TABLE + 16*id;
+        endwhile;
+    endif;
+
+    if swappid == MAX_PROC_NUM then
+        breakpoint;
+        [SYSTEM_STATUS_TABLE + 5] = 0;
+        R0 = -1;
+        return;
+    endif;
+    ptable = PROCESS_TABLE + 16*swappid;
+
+    //set tick to zero
+    [PROCESS_TABLE + 16*swappid] = 0;
+    print swappid;
+
+    alias vpage R5;
+    vpage = 4;
+    while vpage < 20 do
+        alias page R6;
+        alias swap R7;
+        page = [PAGE_TABLE_BASE + 20*swappid + vpage];
+        if page != -1 then
+            //if stack or heap which is not shared
+            if vpage > 15 || (vpage < 8 && [MEMORY_FREE_LIST + page] == 1) then
+                //get swap block
+                multipush(R0, R1, R2, R3, R5, R4, R6);
+                R1 = 6;
+                call MEMORY_MANAGER;
+                swap = R0;
+                multipop(R0, R1, R2, R3, R5, R4, R6);
+                //update dmt
+                [DISK_MAP_TABLE + 10*swappid + vpage/2] = swap;
+                //store to disk
+                multipush(R0, R1, R2, R3, R5, R4, R6, R7);
+                R1 = 1;
+                R2 = pid;
+                R3 = page;
+                R4 = swap;
+                call DEVICE_MANAGER;
+                multipop(R0, R1, R2, R3, R5, R4, R6, R7);
+                //Release page
+                multipush(R0, R1, R2, R3, R5, R4, R6, R7);
+                R1 = 2;
+                R2 = page;
+                call MEMORY_MANAGER;
+                multipop(R0, R1, R2, R3, R5, R4, R6, R7);
+
+                [PAGE_TABLE_BASE + 20*swappid + vpage] = -1;
+                [PAGE_TABLE_BASE + 20*swappid + vpage + 1] = "0000";
+            endif;
+
+            //release the code page
+            if vpage>=8 && vpage<=15 then
+                //release
+                multipush(R0, R1, R2, R3, R5, R4, R6);
+                R1 = 2;
+                R2 = page;
+                call MEMORY_MANAGER;
+                multipop(R0, R1, R2, R3, R5, R4, R6);
+                [PAGE_TABLE_BASE + 20*swappid + vpage] = -1;
+                [PAGE_TABLE_BASE + 20*swappid + vpage + 1] = "0000";
+            endif;
+        endif;
+        vpage = vpage + 2;
+    endwhile;
+    //set swapping state in ptable
+    [ptable + 6] = 1;
+    //incremenet swap count
+    [SYSTEM_STATUS_TABLE + 4] = [SYSTEM_STATUS_TABLE + 4] + 1;
+    //retoare swap state
+    [SYSTEM_STATUS_TABLE + 5] = 0;
+    print "swapoutfinished";
+    return;
+endif;
+        
+//Swap in
+if func == 2 then
+    print "swapinstarted";
+    alias swappid R3;
+    swappid = -1;
+    alias id R4;
+    id = 3;
+
+    alias max R5;
+    max = 0;
+
+    while id < MAX_PROC_NUM do
+        if [PROCESS_TABLE + 16*id] > max && [PROCESS_TABLE + 16*id + 6] == 1 then
+            max = [PROCESS_TABLE + 16*id];
+            swappid = id;
+        endif;
+        id = id + 1;
+    endwhile;
+
+    if swappid == -1 then
+        [SYSTEM_STATUS_TABLE + 5] = 0;
+		R0 = -1;
+		return;
+	endif;
+
+	alias ptable R4;
+	ptable = PROCESS_TABLE + 16*swappid;
+
+	alias vpage R5;
+	vpage = 2;
+	print swappid;
+
+	[ptable] = 0;
+	while vpage < 10 do
+	    //if heap or stack page
+	    if vpage > 7 || (vpage < 4 && [DISK_MAP_TABLE + 10*swappid + vpage] != -1) then
+	        alias page R6;
+	        //get free page
+	        multipush(R0, R1, R2, R3, R4, R5);
+	        R1 = 1;
+	        call MEMORY_MANAGER;
+	        page = R0;
+	        multipop(R0, R1, R2, R3, R4, R5);
+
+	        //load to disk
+	        multipush(R0, R1, R2, R3, R4, R5, R6);
+	        R1 = 2;
+	        R2 = pid;
+            R4 = [DISK_MAP_TABLE + 10*swappid + vpage];
+	        R3 = page;
+	        call DEVICE_MANAGER;
+	        multipop(R0, R1, R2, R3, R4, R5, R6);
+
+	        //release the swap
+            multipush(R0, R1, R2, R3, R4, R5, R6);
+            R1 = 4;
+            R2 = [DISK_MAP_TABLE + 10*swappid + vpage];
+            call MEMORY_MANAGER;
+            multipop(R0, R1, R2, R3, R4, R5, R6);
+
+            [PAGE_TABLE_BASE + 20*swappid + 2*vpage] = page;
+            [PAGE_TABLE_BASE + 20*swappid + 2*vpage + 1] = "0110";
+
+            [DISK_MAP_TABLE + 10*swappid + vpage] = -1;
+        endif;
+        vpage = vpage + 1;
+    endwhile;
+    //reset swap flag
+    [ptable + 6] = 0;
+    //decrement swap count and reset paging to 0
+    [SYSTEM_STATUS_TABLE + 4] = [SYSTEM_STATUS_TABLE + 4] - 1;
+    [SYSTEM_STATUS_TABLE + 5] = 0;
+    print "swapinfinished";
+    return;
+endif;

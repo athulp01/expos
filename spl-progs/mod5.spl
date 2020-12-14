@@ -27,7 +27,7 @@ if [SYSTEM_STATUS_TABLE + 5] != 0 then
     endif;
 else 
     //get next process to schedule , 28927 is the end of process_table memory location
-    while newPID < MAX_PROC_NUM do 
+    while newPID < MAX_PROC_NUM-1 do 
         if [PROCESS_TABLE + 16*newPID + 6] != 1 && ([PROCESS_TABLE + 16*newPID + 4] == READY || [PROCESS_TABLE + 16*newPID + 4] == CREATED) then
             break;
         endif;
