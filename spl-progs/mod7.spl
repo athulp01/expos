@@ -1,3 +1,4 @@
+//DEbugged
 //init
 loadi(65,7);
 //exit
@@ -185,7 +186,6 @@ PTLR = 10;
 [PTBR+12] = -1;
 [PTBR+13] = "0000";
 [PTBR+14] = -1;
-[PTBR+15] = "0000";
 
 //Stack
 [PTBR+16] = 78;
@@ -217,6 +217,7 @@ while (pid < MAX_PROC_NUM) do
     [PROCESS_TABLE + 16*pid] = 0;
     if pid > 2 then
         [PROCESS_TABLE + 16*pid + 4] = TERMINATED;
+        [PROCESS_TABLE + 16*pid + 6] = 0;
     endif;
     pid = pid + 1;
 endwhile;

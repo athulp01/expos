@@ -71,6 +71,7 @@ if func == 3 then
     call PROCESS_MANAGER;
     multipop(R1, R2, R3);
 
+    [PROCESS_TABLE + 16*pid + 4] = TERMINATED;
     if [PROCESS_TABLE + 16*pid + 9] == 9 then
         return;
     endif;
@@ -109,6 +110,8 @@ if func == 4 then
             R2 = [PTBR + page];
             call MEMORY_MANAGER;
             multipop(R1, R2, R3);
+            [PTBR + page] = -1;
+            [PTBR + page + 1] = "0000";
         endif;
         page = page + 2;
     endwhile;

@@ -137,30 +137,28 @@ if call_num == 3 then
     [process_table +9] = 3;
     [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 3;
 
-    alias fileid R3;
-    fileid = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
-
-    //get the corresponding rc table entry
-    alias rc R5;
-    rc = 0;
-    while (rc < 16) do
-        if [rc_base + rc] == FILE && [rc_base + rc + 1] == fileid then
-            break;
-        endif;
-        rc = rc + 2;
-    endwhile;
+    alias fd R3;
+    fd = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
 
     //check validity of fileid
-    if rc == 16 || fileid <0 || fileid > 7 then
+    if fd <0 || fd > 7 then
+        [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
+        [process_table +9] = 0;
+        SP = [process_table + 13];
+        ireturn;
+    endif;
+    
+    if [rc_base + 2*fd] != FILE then
         [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
         [process_table +9] = 0;
         SP = [process_table + 13];
         ireturn;
     endif;
 
+
     //open file table index
     alias openfile R6;
-    openfile = [rc_base + rc + 1];
+    openfile = [rc_base + 2*fd + 1];
 
     //Close from filemanager
     multipush(R0, R1, R2, R3, R4, R5);
@@ -169,8 +167,8 @@ if call_num == 3 then
     call FILE_MANAGER;
     multipop(R0, R1, R2, R3, R4, R5);
 
-    [rc_base + rc] = -1;
-    [rc_base + rc + 1] = -1;
+    [rc_base + 2*fd] = -1;
+    [rc_base + 2*fd + 1] = -1;
     retcode = 0;
     call ret;
 endif;

@@ -1,10 +1,8 @@
 //scheduler
+
+multipush(BP);
 alias curPID R0;
 curPID = [SYSTEM_STATUS_TABLE + 1];
-//backup BP(BP is not backed up during a syscall)
-SP = SP + 1;
-[SP] = BP;
-
 //backup other registers to process_table
 alias process_table R1;
 process_table = PROCESS_TABLE + 16*curPID;
@@ -14,35 +12,31 @@ process_table = PROCESS_TABLE + 16*curPID;
 [process_table + 15] = PTLR;
 
 alias newPID R2;
-newPID = curPID + 1;
+newPID = curPID+1;
 alias next_process_table R3;
 
 if [SYSTEM_STATUS_TABLE + 5] != 0 then
     //if swapper is in blocked state schedule idle process
-    if [PROCESS_TABLE + 15*16 + 4] > TERMINATED && [PROCESS_TABLE + 15*16 + 4] < ALLOCATED then
+    if [PROCESS_TABLE + 15*16 + 4] == WAIT_DISK then 
         newPID = 0;
     else
     //else swapper daemon will be scheduled
         newPID = 15;
     endif;
 else 
-    //get next process to schedule , 28927 is the end of process_table memory location
-    while newPID < MAX_PROC_NUM-1 do 
-        if [PROCESS_TABLE + 16*newPID + 6] != 1 && ([PROCESS_TABLE + 16*newPID + 4] == READY || [PROCESS_TABLE + 16*newPID + 4] == CREATED) then
-            break;
+    while 1 == 1 do 
+        if [PROCESS_TABLE + 16*newPID + 6] != 1 then
+            if [PROCESS_TABLE + 16*newPID + 4] == READY || [PROCESS_TABLE + 16*newPID + 4] == CREATED then
+                break;
+            endif;
         endif;
-        newPID = newPID + 1;
+        newPID = (newPID + 1)%16;
     endwhile;
-    //if there is no process to schedule, then schedule idle process
-    if newPID == MAX_PROC_NUM then
-        newPID = 0;
-    endif;
 endif;
 
 
 next_process_table = PROCESS_TABLE + 16*newPID;
 //restore the registers from new process
-SP = [next_process_table + 11]*512 + [next_process_table + 12];
 PTBR = [next_process_table + 14];
 PTLR = [next_process_table + 15];
 
@@ -55,11 +49,12 @@ if([next_process_table + 4] == CREATED) then
     SP = [next_process_table + 13];
     [next_process_table + 4] = RUNNING;
     [next_process_table + 9] = 0;
+    [next_process_table + 1] = newPID;
     ireturn;
 endif;
 
 
 [next_process_table + 4] = RUNNING;
-BP = [SP];
-SP = SP - 1;
+SP = [next_process_table + 11]*512 + [next_process_table + 12];
+multipop(BP);
 return;

@@ -33,11 +33,14 @@ if(fd != -2) then
     inode = [OPEN_FILE_TABLE + 4*openfileid];
 
     //check permision
-    if  [process_table + 3]!= ROOT && [process_table + 3] != [INODE_TABLE + 16*inode + 2] then
+    if  [process_table + 3]!= ROOT && [process_table + 3] != [INODE_TABLE + 16*inode + 2] && [INODE_TABLE + 16*inode +4] == EXCLUSIVE then
         retcode = -3;
         call ret;
     endif;
 
+    if inode == -1 && [SYSTEM_STATUS_TABLE + 1] == 11 then
+        breakpoint;
+    endif;
     //Acquire inode
     multipush(R0, R1, R2, R3, R4, R5, R6);
     R1 = 4;

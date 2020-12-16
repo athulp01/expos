@@ -18,26 +18,19 @@ rc_base =[process_table + 11]*512 + RESOURCE_TABLE_OFFSET;
 if call_num == 19 then
     [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 19;
 
-    alias semid R3;
-    semid  = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
-    //Get the corresponding rc table entry
-    alias rc R5;
-    rc = 0;
-    while (rc < 16) do
-        if [rc_base + rc] == SEMAPHORE && [rc_base + rc + 1] == semid then
-            break;
-        endif;
-        rc = rc + 2;
-    endwhile;
+    alias semfd R3;
+    semfd  = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
 
     //if semphonre is not valid then exit
-    if rc == 16 || semid <0 || semid > 7 then
+    if [rc_base + semfd*2] != SEMAPHORE || semfd <0 || semfd > 7 then
         [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
         [process_table +9] = 0;
         SP = [process_table + 13];
         print "lockerror";
         ireturn;
     endif;
+    alias semid R4;
+    semid = [rc_base + semfd*2 +1];
 
     //while the sem is locked by other process
     while [SEMAPHORE_TABLE + semid*4] != -1 && [SEMAPHORE_TABLE + semid*4] != [SYSTEM_STATUS_TABLE + 1] do
@@ -55,26 +48,19 @@ endif;
 //SemUnlock
 if call_num == 20 then
     [PROCESS_TABLE + 16*[SYSTEM_STATUS_TABLE+1]+9] = 20;
-    alias semid R3;
-    semid  = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
-
-    //get the corresponding rc tabel entry
-    alias rc R5;
-    rc = 0;
-    while (rc < 16) do
-        if [rc_base + rc] == SEMAPHORE && [rc_base + rc + 1] == semid then
-            break;
-        endif;
-        rc = rc + 2;
-    endwhile;
+    alias semfd R3;
+    semfd  = [[PTBR + 2*(userSP - 4)/512]*512 + (userSP-4)%512];
 
     //if not valid then return
-    if rc == 16 || semid <0 || semid > 7 then
+    if [rc_base + semfd*2] != SEMAPHORE || semfd <0 || semfd > 7 then
         [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
         [process_table +9] = 0;
         SP = [process_table + 13];
         ireturn;
     endif;
+
+    alias semid R4;
+    semid = [rc_base + 2*semfd +1];
 
     //if semaphore is locked
     if [SEMAPHORE_TABLE + semid*4] != -1 then

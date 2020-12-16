@@ -4,7 +4,6 @@ alias pid R2;
 
 //Dswap out
 if func == SWAP_OUT then
-    print "swapoutstarted";
     alias swappid R3;
     swappid = 3;
     alias ptable R4;
@@ -51,7 +50,6 @@ if func == SWAP_OUT then
     endif;
 
     if swappid == MAX_PROC_NUM then
-        breakpoint;
         [SYSTEM_STATUS_TABLE + 5] = 0;
         R0 = -1;
         return;
@@ -60,7 +58,6 @@ if func == SWAP_OUT then
 
     //set tick to zero
     [PROCESS_TABLE + 16*swappid] = 0;
-    print swappid;
 
     alias vpage R5;
     vpage = 4;
@@ -82,7 +79,7 @@ if func == SWAP_OUT then
                 //store to disk
                 multipush(R0, R1, R2, R3, R5, R4, R6, R7);
                 R1 = 1;
-                R2 = pid;
+                R2 = 15;
                 R3 = page;
                 R4 = swap;
                 call DEVICE_MANAGER;
@@ -118,13 +115,11 @@ if func == SWAP_OUT then
     [SYSTEM_STATUS_TABLE + 4] = [SYSTEM_STATUS_TABLE + 4] + 1;
     //retoare swap state
     [SYSTEM_STATUS_TABLE + 5] = 0;
-    print "swapoutfinished";
     return;
 endif;
         
 //Swap in
 if func == 2 then
-    print "swapinstarted";
     alias swappid R3;
     swappid = -1;
     alias id R4;
@@ -134,7 +129,7 @@ if func == 2 then
     max = 0;
 
     while id < MAX_PROC_NUM do
-        if [PROCESS_TABLE + 16*id] > max && [PROCESS_TABLE + 16*id + 6] == 1 then
+        if [PROCESS_TABLE + 16*id + 4] == READY && [PROCESS_TABLE + 16*id] > max && [PROCESS_TABLE + 16*id + 6] == 1 then
             max = [PROCESS_TABLE + 16*id];
             swappid = id;
         endif;
@@ -142,6 +137,8 @@ if func == 2 then
     endwhile;
 
     if swappid == -1 then
+        breakpoint;
+        print "noprocess";
         [SYSTEM_STATUS_TABLE + 5] = 0;
 		R0 = -1;
 		return;
@@ -152,12 +149,11 @@ if func == 2 then
 
 	alias vpage R5;
 	vpage = 2;
-	print swappid;
 
 	[ptable] = 0;
 	while vpage < 10 do
 	    //if heap or stack page
-	    if vpage > 7 || (vpage < 4 && [DISK_MAP_TABLE + 10*swappid + vpage] != -1) then
+	    if (vpage > 7 || vpage < 4) && [DISK_MAP_TABLE + 10*swappid + vpage] != -1 then
 	        alias page R6;
 	        //get free page
 	        multipush(R0, R1, R2, R3, R4, R5);
@@ -169,7 +165,7 @@ if func == 2 then
 	        //load to disk
 	        multipush(R0, R1, R2, R3, R4, R5, R6);
 	        R1 = 2;
-	        R2 = pid;
+	        R2 = 15;
             R4 = [DISK_MAP_TABLE + 10*swappid + vpage];
 	        R3 = page;
 	        call DEVICE_MANAGER;
@@ -194,6 +190,5 @@ if func == 2 then
     //decrement swap count and reset paging to 0
     [SYSTEM_STATUS_TABLE + 4] = [SYSTEM_STATUS_TABLE + 4] - 1;
     [SYSTEM_STATUS_TABLE + 5] = 0;
-    print "swapinfinished";
     return;
 endif;

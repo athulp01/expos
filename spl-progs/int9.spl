@@ -20,7 +20,7 @@ inode = INODE_TABLE;
 while (inode < INODE_TABLE + 16*(MAX_FILE_NUM)) do
    if file == [inode + 1] then
         //should be exec file and code page should not be zero
-        if [inode] != EXEC || [inode+6] == 0 then
+        if [inode] != EXEC || [inode+8] == -1 then
             [[PTBR + 2*(userSP - 1)/512]*512 + (userSP-1)%512] = -1;
             [process_table +9] = 0;
             SP = [process_table + 13];
@@ -52,7 +52,7 @@ multipop(R0, R1, R2, R3);
 SP = [process_table + 11]*512 - 1;
 
 [process_table + 4] = RUNNING;
-[process_table + 7] = inode;
+[process_table + 7] = (inode - INODE_TABLE) / 16;
 
  //Library
 [PTBR+0] = 63;
@@ -79,6 +79,7 @@ call MEMORY_MANAGER;
 [PTBR+9] = "0100";
 multipop(R0,R1, R2, R3);
 
+
 //Invalidate other code pages
 [PTBR+10] = -1;
 [PTBR+11] = "0000";
@@ -93,11 +94,9 @@ multipop(R0,R1, R2, R3);
 call get_new_page;
 [PTBR+16] = new_page;
 [PTBR+17] = "0110";
-
 call get_new_page;
 [PTBR+18] = new_page;
 [PTBR+19] = "0110";
-
 //initalize disk map table
 [DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 2] = -1;
 [DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 3] = -1;
@@ -107,7 +106,6 @@ call get_new_page;
 [DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 7] = [inode+11];
 [DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 8] = -1;
 [DISK_MAP_TABLE + [SYSTEM_STATUS_TABLE+1]*10 + 9] = -1;
-
 
 
 //initalize resource table entry

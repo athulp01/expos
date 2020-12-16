@@ -34,9 +34,6 @@ if fd != -1 then
     openfileid = [rc_base + 2*fd + 1];
     inode = [OPEN_FILE_TABLE + 4*openfileid];
 
-    if [PROCESS_TABLE + 10*16] == 1165 && [SYSTEM_STATUS_TABLE + 1] == 10 then
-        breakpoint;
-    endif;
     //Acquire inode
     multipush(R0, R1, R2, R3, R4, R5, R6);
     R1 = 4;

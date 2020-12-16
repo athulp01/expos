@@ -53,7 +53,7 @@ call get_new_page;
 //pid is set by PROCESS_MANAGER
 [PROCESS_TABLE + new_pid*16 + 2] = [SYSTEM_STATUS_TABLE + 1];
 [PROCESS_TABLE + new_pid*16 + 3] = [process_table + 3];
-[PROCESS_TABLE + new_pid*16 + 6] = [process_table + 6];
+[PROCESS_TABLE + new_pid*16 + 6] = 0;
 [PROCESS_TABLE + new_pid*16 + 7] = [process_table + 7];
 //no need to intialize input buffer
 [PROCESS_TABLE + new_pid*16 + 9] = 0;
@@ -100,7 +100,7 @@ page_table_entry = 0;
 while page_table_entry < 16 do
     //share all pages except stack
     [new_ptbr + page_table_entry] = [PTBR + page_table_entry];
-    if page_table_entry%2 == 0 then
+    if page_table_entry%2 == 0 && [PTBR + page_table_entry] != -1 then
         [MEMORY_FREE_LIST + [PTBR + page_table_entry]] = [MEMORY_FREE_LIST + [PTBR + page_table_entry]] + 1;
     endif;
     page_table_entry = page_table_entry + 1;
