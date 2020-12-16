@@ -54,6 +54,9 @@ if func == 2 || func == 1 then
     endif;
 
 
+    if addr == 244 then
+        breakpoint;
+    endif;
     //unlock the buffer
     multipush(R1, R2, R3, R4, R5);
     R1 = 2;

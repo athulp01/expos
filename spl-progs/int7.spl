@@ -28,6 +28,7 @@ if(fd != -2) then
         call ret;
     endif;
 
+
     alias openfileid R5;
     openfileid = [[process_table + 11]*512 + RESOURCE_TABLE_OFFSET+ 2*fd + 1];
     inode = [OPEN_FILE_TABLE + 4*openfileid];
@@ -38,9 +39,6 @@ if(fd != -2) then
         call ret;
     endif;
 
-    if inode == -1 && [SYSTEM_STATUS_TABLE + 1] == 11 then
-        breakpoint;
-    endif;
     //Acquire inode
     multipush(R0, R1, R2, R3, R4, R5, R6);
     R1 = 4;
